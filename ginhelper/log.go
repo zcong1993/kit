@@ -19,13 +19,12 @@ func LoggerMw(logger log.Logger) gin.HandlerFunc {
 		latency := int(math.Ceil(float64(stop.Nanoseconds()) / 1000000.0))
 		statusCode := c.Writer.Status()
 		clientIP := c.ClientIP()
-		clientUserAgent := c.Request.UserAgent()
 		dataLength := c.Writer.Size()
 		if dataLength < 0 {
 			dataLength = 0
 		}
 
-		logger = log.WithPrefix(logger, "component", "request", "path", path, "method", c.Request.Method, "statusCode", statusCode, "latency", latency, "clientIP", clientIP, "dataLength", dataLength, "userAgent", clientUserAgent)
+		logger = log.WithPrefix(logger, "component", "request", "path", path, "method", c.Request.Method, "statusCode", statusCode, "latency", latency, "clientIP", clientIP, "dataLength", dataLength)
 
 		if len(c.Errors) > 0 {
 			level.Error(logger).Log("message", c.Errors.ByType(gin.ErrorTypePrivate).String())
