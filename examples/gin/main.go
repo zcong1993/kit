@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	r := gin.Default()
+	r, _ := ginhelper.DefaultServer()
 	r.GET("/", func(c *gin.Context) {
 		time.Sleep(5 * time.Second)
 		c.String(http.StatusOK, "Welcome Gin Server")
