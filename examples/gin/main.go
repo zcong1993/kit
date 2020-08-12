@@ -15,5 +15,7 @@ func main() {
 		c.String(http.StatusOK, "Welcome Gin Server")
 	})
 
-	ginhelper.GracefulShutdown(r, ":8080", time.Second*5)
+	ginhelper.GracefulShutdown(r, ":8080", time.Second*5, func() {
+		println("on shutdown")
+	})
 }

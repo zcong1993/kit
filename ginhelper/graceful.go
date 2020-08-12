@@ -14,7 +14,7 @@ import (
 
 // GracefulShutdown wait for interrupt signal to gracefully shutdown the server with
 // a timeout.
-func GracefulShutdown(r *gin.Engine, addr string, timeout time.Duration) {
+func GracefulShutdown(r *gin.Engine, addr string, timeout time.Duration, onShutdown func()) {
 	srv := &http.Server{
 		Addr:    addr,
 		Handler: r,
@@ -43,6 +43,8 @@ func GracefulShutdown(r *gin.Engine, addr string, timeout time.Duration) {
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Fatal("Server forced to shutdown:", err)
 	}
+
+	onShutdown()
 
 	log.Println("Server exiting")
 }
