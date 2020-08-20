@@ -2,7 +2,8 @@ package ginhelper
 
 import (
 	"net/http"
-	"strconv"
+
+	"github.com/go-playground/validator/v10"
 
 	"github.com/gin-gonic/gin"
 )
@@ -25,10 +26,7 @@ func (e *BizError) Error() string {
 	if e.Message != "" {
 		return e.Message
 	}
-	if err := http.StatusText(e.Status); err != "" {
-		return err
-	}
-	return "E" + strconv.Itoa(e.Code)
+	return http.StatusText(e.Status)
 }
 
 func ReplyError(ctx *gin.Context, err error) {
@@ -37,6 +35,20 @@ func ReplyError(ctx *gin.Context, err error) {
 		ctx.JSON(e.Status, e)
 		return
 	}
+
+	// gin binding 校验错误
+	ve, ok := err.(validator.ValidationErrors)
+	if ok {
+		// todo: 控制是否返回错误详情
+		err := &BizError{
+			Code:    400,
+			Message: ve.Error(),
+		}
+		ctx.JSON(400, err)
+		return
+	}
+
+	// 其他错误
 	err1 := &BizError{
 		Code:    500,
 		Message: err.Error(),

@@ -8,6 +8,10 @@ import (
 	"github.com/zcong1993/x/ginhelper"
 )
 
+type Input struct {
+	Name string `json:"name" binding:"required"`
+}
+
 func main() {
 	r, _ := ginhelper.DefaultServer()
 	r.GET("/", func(c *gin.Context) {
@@ -21,6 +25,16 @@ func main() {
 			return ginhelper.NewBizError(400, 400, "query q is required")
 		}
 		c.JSON(200, gin.H{"success": true})
+		return nil
+	}))
+
+	r.POST("/p", ginhelper.ErrorWrapper(func(c *gin.Context) error {
+		var input Input
+		err := c.ShouldBindJSON(&input)
+		if err != nil {
+			return err
+		}
+		c.JSON(200, &input)
 		return nil
 	}))
 
