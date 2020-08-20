@@ -15,6 +15,15 @@ func main() {
 		c.String(http.StatusOK, "Welcome Gin Server")
 	})
 
+	r.GET("/test", ginhelper.ErrorWrapper(func(c *gin.Context) error {
+		q := c.Query("q")
+		if q == "" {
+			return ginhelper.NewBizError(400, 400, "query q is required")
+		}
+		c.JSON(200, gin.H{"success": true})
+		return nil
+	}))
+
 	ginhelper.GracefulShutdown(r, ":8080", time.Second*5, func() {
 		println("on shutdown")
 	})
