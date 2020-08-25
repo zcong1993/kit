@@ -13,6 +13,7 @@
 package flag
 
 import (
+	klog "github.com/go-kit/kit/log"
 	"github.com/zcong1993/x/log"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
@@ -51,4 +52,11 @@ func AddFlags(a *kingpin.Application, config *log.Config) {
 	config.WithCaller = &log.WithCaller{}
 	a.Flag(WithCallerFlagName, WithCallerFlagHelp).
 		Default("true").SetValue(config.WithCaller)
+}
+
+// NewFromFlags auto bind config from ali and return a logger instance
+func NewFromFlags(a *kingpin.Application) klog.Logger {
+	var c log.Config
+	AddFlags(a, &c)
+	return log.New(&c)
 }
