@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"time"
 
@@ -30,8 +31,9 @@ func main() {
 
 	r.POST("/p", ginhelper.ErrorWrapper(func(c *gin.Context) error {
 		var input Input
-		err := c.ShouldBindJSON(&input)
+		err := c.ShouldBind(&input)
 		if err != nil {
+			fmt.Printf("%+v\n", err)
 			return err
 		}
 		c.JSON(200, &input)
