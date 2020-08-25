@@ -15,7 +15,7 @@ package flag
 import (
 	klog "github.com/go-kit/kit/log"
 	"github.com/zcong1993/x/log"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
+	"gopkg.in/alecthomas/kingpin.v2"
 )
 
 // LevelFlagName is the canonical flag name to configure the allowed log level
@@ -54,9 +54,11 @@ func AddFlags(a *kingpin.Application, config *log.Config) {
 		Default("true").SetValue(config.WithCaller)
 }
 
-// NewFromFlags auto bind config from ali and return a logger instance
-func NewFromFlags(a *kingpin.Application) klog.Logger {
+// NewFactoryFromFlags auto bind config from ali and return a logger instance
+func NewFactoryFromFlags(a *kingpin.Application) func() klog.Logger {
 	var c log.Config
 	AddFlags(a, &c)
-	return log.New(&c)
+	return func() klog.Logger {
+		return log.New(&c)
+	}
 }
