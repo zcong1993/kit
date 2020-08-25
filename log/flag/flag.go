@@ -55,6 +55,7 @@ func AddFlags(a *kingpin.Application, config *log.Config) {
 }
 
 // NewFactoryFromFlags auto bind config from ali and return a logger instance
+// return func should be called after kingpin.Parse()
 func NewFactoryFromFlags(a *kingpin.Application) func() klog.Logger {
 	var c log.Config
 	AddFlags(a, &c)
