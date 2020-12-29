@@ -11,7 +11,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package promlog defines standardised ways to initialize Go kit loggers
+// Package promlog defines standardized ways to initialize Go kit loggers
 // across Prometheus components.
 // It should typically only ever be imported by main packages.
 package log
@@ -25,14 +25,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-var (
-	// This timestamp format differs from RFC3339Nano by using .000 instead
-	// of .999999999 which changes the timestamp from 9 variable to 3 fixed
-	// decimals (.130 instead of .130987456).
-	timestampFormat = log.TimestampFormat(
-		func() time.Time { return time.Now().UTC() },
-		"2006-01-02T15:04:05.000Z07:00",
-	)
+// This timestamp format differs from RFC3339Nano by using .000 instead
+// of .999999999 which changes the timestamp from 9 variable to 3 fixed
+// decimals (.130 instead of .130987456).
+var timestampFormat = log.TimestampFormat(
+	func() time.Time { return time.Now().UTC() },
+	"2006-01-02T15:04:05.000Z07:00",
 )
 
 // AllowedLevel is a settable identifier for the minimum level a log entry
@@ -102,7 +100,7 @@ func (c *WithCaller) Set(s string) error {
 	return nil
 }
 
-// Config is a struct containing configurable settings for the logger
+// Config is a struct containing configurable settings for the logger.
 type Config struct {
 	Level      *AllowedLevel
 	Format     *AllowedFormat

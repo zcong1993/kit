@@ -14,7 +14,7 @@ package flag
 
 import (
 	klog "github.com/go-kit/kit/log"
-	"github.com/zcong1993/x/log"
+	"github.com/zcong1993/x/pkg/log"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
@@ -39,7 +39,7 @@ const WithCallerFlagName = "log.caller"
 const WithCallerFlagHelp = "If with caller field"
 
 // AddFlags adds the flags used by this package to the Kingpin application.
-// To use the default Kingpin application, call AddFlags(kingpin.CommandLine)
+// To use the default Kingpin application, call AddFlags(kingpin.CommandLine).
 func AddFlags(a *kingpin.Application, config *log.Config) {
 	config.Level = &log.AllowedLevel{}
 	a.Flag(LevelFlagName, LevelFlagHelp).
@@ -55,7 +55,7 @@ func AddFlags(a *kingpin.Application, config *log.Config) {
 }
 
 // NewFactoryFromFlags auto bind config from ali and return a logger instance
-// return func should be called after kingpin.Parse()
+// return func should be called after kingpin.Parse().
 func NewFactoryFromFlags(a *kingpin.Application) func() klog.Logger {
 	var c log.Config
 	AddFlags(a, &c)

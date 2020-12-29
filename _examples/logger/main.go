@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/go-kit/kit/log/level"
-	"github.com/zcong1993/x/log/flag"
+	"github.com/zcong1993/x/pkg/log/flag"
 
 	"gopkg.in/alecthomas/kingpin.v2"
 )

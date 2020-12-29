@@ -2,11 +2,15 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 
+	"github.com/oklog/run"
+	"github.com/zcong1993/x/pkg/extrun"
+
 	"github.com/gin-gonic/gin"
-	"github.com/zcong1993/x/ginhelper"
+	"github.com/zcong1993/x/pkg/ginhelper"
 )
 
 type Input struct {
@@ -40,7 +44,19 @@ func main() {
 		return nil
 	}))
 
-	ginhelper.GracefulShutdown(r, ":8080", time.Second*5, func() {
-		println("on shutdown")
+	httpServer := ginhelper.NewHttpServer(r)
+
+	var g run.Group
+	extrun.HandleSignal(&g)
+
+	g.Add(func() error {
+		return httpServer.Start(":8080")
+	}, func(err error) {
+		fmt.Println("http server will exit", err)
+		_ = httpServer.Shutdown(time.Second * 5)
 	})
+
+	if err := g.Run(); err != nil {
+		log.Fatal("start error ", err)
+	}
 }

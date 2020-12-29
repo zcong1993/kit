@@ -2,12 +2,12 @@ package ginhelper
 
 import (
 	"github.com/gin-gonic/gin"
-	logKit "github.com/go-kit/kit/log"
-	"github.com/zcong1993/x/log/flag"
+	"github.com/go-kit/kit/log"
+	"github.com/zcong1993/x/pkg/log/flag"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
 
-func DefaultServer() (*gin.Engine, logKit.Logger) {
+func DefaultServer() (*gin.Engine, log.Logger) {
 	loggerF := flag.NewFactoryFromFlags(kingpin.CommandLine)
 	kingpin.CommandLine.GetFlag("help").Short('h')
 	kingpin.Parse()

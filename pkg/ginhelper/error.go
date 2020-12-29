@@ -1,7 +1,7 @@
 package ginhelper
 
 import (
-	"errors"
+	"github.com/pkg/errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
