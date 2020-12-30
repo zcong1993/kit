@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/zcong1993/x/pkg/server/exthttp"
+
 	"github.com/spf13/cobra"
 	log2 "github.com/zcong1993/x/pkg/log"
 
@@ -50,16 +52,18 @@ func main() {
 				return nil
 			}))
 
-			httpServer := ginhelper.NewHttpServer(r)
+			httpServer := exthttp.NewHttpServer(r, logger, &exthttp.Option{
+				GracePeriod: time.Second * 5,
+				Listen:      ":8080",
+			})
 
 			var g run.Group
 			extrun.HandleSignal(&g)
 
 			g.Add(func() error {
-				return httpServer.Start(":8080")
+				return httpServer.Start()
 			}, func(err error) {
-				fmt.Println("http server will exit", err)
-				_ = httpServer.Shutdown(time.Second * 5)
+				httpServer.Shutdown(err)
 			})
 
 			if err := g.Run(); err != nil {
