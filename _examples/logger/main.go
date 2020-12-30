@@ -2,26 +2,35 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/go-kit/kit/log/level"
-	"github.com/zcong1993/x/pkg/log/flag"
-
-	"gopkg.in/alecthomas/kingpin.v2"
+	"github.com/spf13/cobra"
+	"github.com/zcong1993/x/pkg/log"
 )
 
 func main() {
-	var (
-		positionFile = kingpin.Flag("position.file", "Position file name.").Default("position.json").String()
-		interval     = kingpin.Flag("interval", "All ticker interval.").Default("10s").Duration()
-	)
-	loggerFunc := flag.NewFactoryFromFlags(kingpin.CommandLine)
-	interval2 := kingpin.Flag("interval2", "All ticker interval.").Default("12s").Duration()
-	kingpin.CommandLine.GetFlag("help").Short('h')
-	kingpin.Parse()
+	rootCmd := &cobra.Command{
+		Use:   "log",
+		Short: "Test cli",
+	}
 
-	logger := loggerFunc()
+	log.Register(rootCmd)
 
-	fmt.Println(*positionFile, *interval, *interval2)
-	logger.Log("aaa", "xcdcd")
-	level.Debug(logger).Log("msg", "debug")
+	var testCmd = &cobra.Command{
+		Use:   "test",
+		Short: "Test sub command",
+		Run: func(cmd *cobra.Command, args []string) {
+			logger := log.MustNewLogger(cmd)
+			level.Info(logger).Log("msg", "test")
+		},
+	}
+
+	rootCmd.AddCommand(testCmd)
+
+	err := rootCmd.Execute()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 }

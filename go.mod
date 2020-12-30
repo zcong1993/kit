@@ -8,5 +8,5 @@ require (
 	github.com/go-playground/validator/v10 v10.2.0
 	github.com/oklog/run v1.1.0
 	github.com/pkg/errors v0.9.1
-	gopkg.in/alecthomas/kingpin.v2 v2.2.6
+	github.com/spf13/cobra v1.1.1
 )
