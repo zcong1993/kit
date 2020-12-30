@@ -17,21 +17,48 @@ type HttpServer struct {
 }
 
 type Option struct {
-	GracePeriod time.Duration
-	Listen      string
+	gracePeriod time.Duration
+	listen      string
+	service     string
 }
 
-func NewHttpServer(handler http.Handler, logger log.Logger, option *Option) *HttpServer {
-	return &HttpServer{handler: handler, logger: log.With(logger, "service", "http/server"), option: option}
+type OptionFunc func(option *Option)
+
+func WithGracePeriod(gracePeriod time.Duration) OptionFunc {
+	return func(o *Option) {
+		o.gracePeriod = gracePeriod
+	}
+}
+
+func WithListen(listen string) OptionFunc {
+	return func(o *Option) {
+		o.listen = listen
+	}
+}
+
+func WithServiceName(name string) OptionFunc {
+	return func(o *Option) {
+		o.service = name
+	}
+}
+
+func NewHttpServer(handler http.Handler, logger log.Logger, opts ...OptionFunc) *HttpServer {
+	option := &Option{
+		service: "http/server",
+	}
+	for _, f := range opts {
+		f(option)
+	}
+	return &HttpServer{handler: handler, logger: log.With(logger, "service", option.service), option: option}
 }
 
 func (hs *HttpServer) Start() error {
 	srv := &http.Server{
-		Addr:    hs.option.Listen,
+		Addr:    hs.option.listen,
 		Handler: hs.handler,
 	}
 	hs.srv = srv
-	level.Info(hs.logger).Log("msg", "listening for requests", "address", hs.option.Listen)
+	level.Info(hs.logger).Log("msg", "listening for requests", "address", hs.option.listen)
 	return srv.ListenAndServe()
 }
 
@@ -42,13 +69,13 @@ func (hs *HttpServer) Shutdown(err error) {
 		return
 	}
 
-	if hs.option.GracePeriod == 0 {
+	if hs.option.gracePeriod == 0 {
 		hs.srv.Close()
 		level.Info(hs.logger).Log("msg", "internal server is shutdown", "err", err)
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), hs.option.GracePeriod)
+	ctx, cancel := context.WithTimeout(context.Background(), hs.option.gracePeriod)
 	defer cancel()
 
 	if err := hs.srv.Shutdown(ctx); err != nil {

@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/zcong1993/x/pkg/server/exthttp"
 
 	"github.com/spf13/cobra"
@@ -22,13 +24,23 @@ type Input struct {
 	Name string `json:"name" binding:"required"`
 }
 
+var (
+	requestTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
+		Name: "http_requests_total",
+		Help: "Http requests total count.",
+	}, []string{"router"})
+)
+
 func main() {
+	prometheus.MustRegister(requestTotal)
+
 	app := &cobra.Command{
 		Run: func(cmd *cobra.Command, args []string) {
 			logger := log2.MustNewLogger(cmd)
 			r := ginhelper.DefaultWithLogger(logger)
 			r.GET("/", func(c *gin.Context) {
-				time.Sleep(5 * time.Second)
+				requestTotal.WithLabelValues("/").Inc()
+				time.Sleep(2 * time.Second)
 				c.String(http.StatusOK, "Welcome Gin Server")
 			})
 
@@ -52,10 +64,7 @@ func main() {
 				return nil
 			}))
 
-			httpServer := exthttp.NewHttpServer(r, logger, &exthttp.Option{
-				GracePeriod: time.Second * 5,
-				Listen:      ":8080",
-			})
+			httpServer := exthttp.NewHttpServer(r, logger, exthttp.WithGracePeriod(time.Second*5), exthttp.WithListen(":8080"))
 
 			var g run.Group
 			extrun.HandleSignal(&g)
@@ -65,6 +74,11 @@ func main() {
 			}, func(err error) {
 				httpServer.Shutdown(err)
 			})
+
+			profileServer := exthttp.NewMuxServer(logger, exthttp.WithListen(":6060"), exthttp.WithServiceName("metrics/profiler"))
+			profileServer.RegisterProfiler()
+			profileServer.RegisterMetrics(nil)
+			profileServer.RunGroup(&g)
 
 			if err := g.Run(); err != nil {
 				log.Fatal("start error ", err)
