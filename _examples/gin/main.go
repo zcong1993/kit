@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/zcong1993/x/pkg/prober"
+
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/zcong1993/x/pkg/server/exthttp"
@@ -69,6 +71,10 @@ func main() {
 
 			var g run.Group
 
+			// 服务健康状态
+			httpProber := prober.NewHTTP()
+			statusProber := prober.Combine(httpProber, prober.NewInstrumentation("gin", logger))
+
 			// 监听退出信号
 			extrun.HandleSignal(&g)
 
@@ -76,17 +82,22 @@ func main() {
 
 			// 真正的业务 http server
 			g.Add(func() error {
+				statusProber.Healthy()
 				return httpServer.Start()
 			}, func(err error) {
+				statusProber.NotReady(err)
 				httpServer.Shutdown(err)
+				statusProber.NotHealthy(err)
 			})
 
 			// metrics 和 profiler 服务, debug 和监控
 			profileServer := exthttp.NewMuxServer(logger, exthttp.WithListen(":6060"), exthttp.WithServiceName("metrics/profiler"))
 			profileServer.RegisterProfiler()
 			profileServer.RegisterMetrics(nil)
+			profileServer.RegisterProber(httpProber)
 			profileServer.RunGroup(&g)
 
+			statusProber.Ready()
 			if err := g.Run(); err != nil {
 				log.Fatal("start error ", err)
 			}

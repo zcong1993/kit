@@ -4,6 +4,8 @@ import (
 	"net/http"
 	"net/http/pprof"
 
+	"github.com/zcong1993/x/pkg/prober"
+
 	"github.com/go-kit/kit/log/level"
 
 	"github.com/felixge/fgprof"
@@ -45,6 +47,13 @@ func (ms *MuxServer) RegisterMetrics(g prometheus.Gatherer) {
 	} else {
 		level.Info(ms.logger).Log("msg", "register prometheus default gatherer")
 		ms.mux.Handle("/metrics", promhttp.HandlerFor(prometheus.DefaultGatherer, promhttp.HandlerOpts{}))
+	}
+}
+
+func (ms *MuxServer) RegisterProber(p *prober.HTTPProbe) {
+	if p != nil {
+		ms.mux.Handle("/-/healthy", p.HealthyHandler(ms.logger))
+		ms.mux.Handle("/-/ready", p.ReadyHandler(ms.logger))
 	}
 }
 
