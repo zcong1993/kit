@@ -30,6 +30,14 @@ func NewMuxServer(logger log.Logger, opts ...OptionFunc) *MuxServer {
 	}
 }
 
+func (ms *MuxServer) HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request)) {
+	ms.mux.HandleFunc(pattern, handler)
+}
+
+func (ms *MuxServer) Handle(pattern string, handler http.Handler) {
+	ms.mux.Handle(pattern, handler)
+}
+
 func (ms *MuxServer) RegisterProfiler() {
 	level.Info(ms.logger).Log("msg", "register profiler")
 	ms.mux.HandleFunc("/debug/pprof/", pprof.Index)
