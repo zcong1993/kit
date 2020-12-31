@@ -1,6 +1,7 @@
 package log
 
 import (
+	"fmt"
 	"os"
 	"time"
 
@@ -87,7 +88,7 @@ func NewLogger(cmd *cobra.Command) (klog.Logger, error) {
 func MustNewLogger(cmd *cobra.Command) klog.Logger {
 	logger, err := NewLogger(cmd)
 	if err != nil {
-		cmd.PrintErrf("failed init logger:  %s\n", err)
+		fmt.Fprintf(os.Stderr, "failed init logger:  %s\n", err)
 		os.Exit(2)
 	}
 	return logger

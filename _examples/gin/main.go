@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/zcong1993/x/pkg/tracing"
+	"github.com/zcong1993/x/pkg/tracing/register"
+
 	"github.com/zcong1993/x/pkg/prober"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -40,36 +43,11 @@ func main() {
 		Run: func(cmd *cobra.Command, args []string) {
 			// 初始化日志
 			logger := log2.MustNewLogger(cmd)
-			// 初始化 gin
-			r := ginhelper.DefaultWithLogger(logger)
-
-			r.GET("/", func(c *gin.Context) {
-				requestTotal.WithLabelValues("/").Inc()
-				time.Sleep(2 * time.Second)
-				c.String(http.StatusOK, "Welcome Gin Server")
-			})
-
-			r.GET("/test", ginhelper.ErrorWrapper(func(c *gin.Context) error {
-				q := c.Query("q")
-				if q == "" {
-					return ginhelper.NewBizError(400, 400, "query q is required")
-				}
-				c.JSON(200, gin.H{"success": true})
-				return nil
-			}))
-
-			r.POST("/p", ginhelper.ErrorWrapper(func(c *gin.Context) error {
-				var input Input
-				err := c.ShouldBind(&input)
-				if err != nil {
-					fmt.Printf("%+v\n", err)
-					return err
-				}
-				c.JSON(200, &input)
-				return nil
-			}))
 
 			var g run.Group
+
+			// 初始化 tracer
+			tracer := register.MustSetupTracer(&g, cmd, logger, nil)
 
 			// 服务健康状态
 			httpProber := prober.NewHTTP()
@@ -78,9 +56,14 @@ func main() {
 			// 监听退出信号
 			extrun.HandleSignal(&g)
 
+			// 真正的业务 http server
+			// 初始化 gin
+			r := ginhelper.DefaultWithLogger(logger)
+			r.Use(tracing.GinMiddleware(tracer, "gin", logger))
+			addRouters(r)
+
 			httpServer := exthttp.NewHttpServer(r, logger, exthttp.WithGracePeriod(time.Second*5), exthttp.WithListen(":8080"))
 
-			// 真正的业务 http server
 			g.Add(func() error {
 				statusProber.Healthy()
 				return httpServer.Start()
@@ -106,8 +89,37 @@ func main() {
 
 	// 注册日志相关 flag
 	log2.Register(app.PersistentFlags())
+	register.RegisterFlags(app.PersistentFlags())
 
 	if err := app.Execute(); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func addRouters(r *gin.Engine) {
+	r.GET("/", func(c *gin.Context) {
+		requestTotal.WithLabelValues("/").Inc()
+		time.Sleep(2 * time.Second)
+		c.String(http.StatusOK, "Welcome Gin Server")
+	})
+
+	r.GET("/test", ginhelper.ErrorWrapper(func(c *gin.Context) error {
+		q := c.Query("q")
+		if q == "" {
+			return ginhelper.NewBizError(400, 400, "query q is required")
+		}
+		c.JSON(200, gin.H{"success": true})
+		return nil
+	}))
+
+	r.POST("/p", ginhelper.ErrorWrapper(func(c *gin.Context) error {
+		var input Input
+		err := c.ShouldBind(&input)
+		if err != nil {
+			fmt.Printf("%+v\n", err)
+			return err
+		}
+		c.JSON(200, &input)
+		return nil
+	}))
 }
