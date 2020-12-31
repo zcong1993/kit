@@ -48,7 +48,7 @@ func main() {
 			var g run.Group
 
 			// 初始化 tracer
-			tracer := register.MustSetupTracer(&g, cmd, logger, nil)
+			tracer := register.MustInitTracer(&g, cmd, logger, nil)
 
 			// 服务健康状态
 			httpProber := prober.NewHTTP()

@@ -49,10 +49,10 @@ func NewTracer(cmd *cobra.Command, logger log.Logger, metrics prometheus.Registe
 	return client.NewTracer(context.Background(), logger, metrics, confContentYaml)
 }
 
-func MustSetupTracer(g *run.Group, cmd *cobra.Command, logger log.Logger, metrics prometheus.Registerer) opentracing.Tracer {
+func MustInitTracer(g *run.Group, cmd *cobra.Command, logger log.Logger, metrics prometheus.Registerer) opentracing.Tracer {
 	tracer, closer, err := NewTracer(cmd, logger, metrics)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, errors.Wrapf(err, "tracing failed"))
+		fmt.Fprintln(os.Stderr, errors.Wrapf(err, "init tracing failed"))
 		os.Exit(1)
 	}
 
