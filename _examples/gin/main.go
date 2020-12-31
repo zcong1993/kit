@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
@@ -99,6 +100,11 @@ func main() {
 func addRouters(r *gin.Engine) {
 	r.GET("/", func(c *gin.Context) {
 		requestTotal.WithLabelValues("/").Inc()
+		go func() {
+			tracing.DoInSpan(c.Request.Context(), "bg work", func(ctx context.Context) {
+				time.Sleep(time.Second)
+			})
+		}()
 		time.Sleep(2 * time.Second)
 		c.String(http.StatusOK, "Welcome Gin Server")
 	})
