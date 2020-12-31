@@ -4,6 +4,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/spf13/pflag"
+
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
@@ -26,10 +28,10 @@ func DefaultLogger() klog.Logger {
 	return logger
 }
 
-func Register(root *cobra.Command) {
-	root.PersistentFlags().String("log.level", "info", "Log level")
-	root.PersistentFlags().String("log.format", "logfmt", "Log format")
-	root.PersistentFlags().Bool("log.caller", false, "If with caller field")
+func Register(flagSet *pflag.FlagSet) {
+	flagSet.String("log.level", "info", "Log level")
+	flagSet.String("log.format", "logfmt", "Log format")
+	flagSet.Bool("log.caller", false, "If with caller field")
 }
 
 func NewLogger(cmd *cobra.Command) (klog.Logger, error) {

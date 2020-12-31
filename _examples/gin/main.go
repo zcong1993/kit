@@ -105,7 +105,7 @@ func main() {
 	}
 
 	// 注册日志相关 flag
-	log2.Register(app)
+	log2.Register(app.PersistentFlags())
 
 	if err := app.Execute(); err != nil {
 		log.Fatal(err)

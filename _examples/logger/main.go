@@ -15,7 +15,7 @@ func main() {
 		Short: "Test cli",
 	}
 
-	log.Register(rootCmd)
+	log.Register(rootCmd.PersistentFlags())
 
 	var testCmd = &cobra.Command{
 		Use:   "test",
