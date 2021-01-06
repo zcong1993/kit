@@ -73,7 +73,7 @@ func GinMiddleware(tracer opentracing.Tracer, name string, logger log.Logger) gi
 
 		if t, ok := tracer.(Tracer); ok {
 			if traceID, ok := t.GetTraceIDFromSpanContext(span.Context()); ok {
-				c.Set(traceIDResponseHeader, traceID)
+				c.Header(traceIDResponseHeader, traceID)
 			}
 		}
 
