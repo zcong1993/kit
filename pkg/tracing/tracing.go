@@ -10,7 +10,7 @@ import (
 )
 
 // ForceTracingBaggageKey - force sampling header.
-const ForceTracingBaggageKey = "X-Force-Tracing"
+const ForceTracingBaggageKey = "x-force-tracing"
 
 // traceIdResponseHeader - Trace ID response header.
 const traceIDResponseHeader = "X-Trace-Id"
