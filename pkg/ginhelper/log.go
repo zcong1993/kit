@@ -24,18 +24,16 @@ func LoggerMw(logger log.Logger) gin.HandlerFunc {
 			dataLength = 0
 		}
 
-		logger = log.WithPrefix(logger, "component", "request", "path", path, "method", c.Request.Method, "statusCode", statusCode, "latency", latency, "clientIP", clientIP, "dataLength", dataLength)
-
 		if len(c.Errors) > 0 {
-			level.Error(logger).Log("message", c.Errors.ByType(gin.ErrorTypePrivate).String())
+			level.Error(logger).Log("path", path, "method", c.Request.Method, "statusCode", statusCode, "latency", latency, "clientIP", clientIP, "dataLength", dataLength, "message", c.Errors.ByType(gin.ErrorTypePrivate).String())
 		} else {
-			level.Info(logger).Log()
+			level.Info(logger).Log("path", path, "method", c.Request.Method, "statusCode", statusCode, "latency", latency, "clientIP", clientIP, "dataLength", dataLength)
 		}
 	}
 }
 
 func DefaultWithLogger(logger log.Logger) *gin.Engine {
 	g := gin.New()
-	g.Use(LoggerMw(logger), gin.Recovery())
+	g.Use(LoggerMw(log.With(logger, "component", "requestLog")), gin.Recovery())
 	return g
 }
