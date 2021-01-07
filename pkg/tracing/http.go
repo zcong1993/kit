@@ -139,3 +139,62 @@ func HTTPTripperware(logger log.Logger, next http.RoundTripper) http.RoundTrippe
 		next:   next,
 	}
 }
+
+type autotripperware struct {
+	logger log.Logger
+	next   http.RoundTripper
+}
+
+func (t *autotripperware) RoundTrip(r *http.Request) (*http.Response, error) {
+	tracer := tracerFromContext(r.Context())
+	if tracer == nil {
+		// No tracer, programmatic mistake.
+		level.Warn(t.logger).Log("msg", "Tracer not found in context.")
+		return t.next.RoundTrip(r)
+	}
+
+	parentSpan := opentracing.SpanFromContext(r.Context())
+	if parentSpan == nil {
+		// No span.
+		return t.next.RoundTrip(r)
+	}
+
+	span := tracer.StartSpan("send http request", opentracing.ChildOf(parentSpan.Context()))
+	defer span.Finish()
+
+	ext.SpanKindRPCClient.Set(span)
+	ext.HTTPMethod.Set(span, r.Method)
+	ext.HTTPUrl.Set(span, r.URL.String())
+	host, portString, err := net.SplitHostPort(r.URL.Host)
+	if err == nil {
+		ext.PeerHostname.Set(span, host)
+		if port, err := strconv.Atoi(portString); err != nil {
+			ext.PeerPort.Set(span, uint16(port))
+		}
+	} else {
+		ext.PeerHostname.Set(span, r.URL.Host)
+	}
+
+	// There's nothing we can do with any errors here.
+	if err = tracer.Inject(
+		span.Context(),
+		opentracing.HTTPHeaders,
+		opentracing.HTTPHeadersCarrier(r.Header),
+	); err != nil {
+		level.Warn(t.logger).Log("msg", "failed to inject trace", "err", err)
+	}
+
+	resp, err := t.next.RoundTrip(r)
+	if err != nil {
+		ext.Error.Set(span, true)
+	}
+	return resp, err
+}
+
+// HTTPAutoTripperware is same as HTTPTripperware, but auto start child span and call span finish
+func HTTPAutoTripperware(logger log.Logger, next http.RoundTripper) http.RoundTripper {
+	return &autotripperware{
+		logger: logger,
+		next:   next,
+	}
+}
