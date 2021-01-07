@@ -7,12 +7,12 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/zcong1993/x/pkg/metrics"
+
 	"github.com/zcong1993/x/pkg/tracing"
 	"github.com/zcong1993/x/pkg/tracing/register"
 
 	"github.com/zcong1993/x/pkg/prober"
-
-	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/zcong1993/x/pkg/server/exthttp"
 
@@ -30,16 +30,7 @@ type Input struct {
 	Name string `json:"name" binding:"required"`
 }
 
-var (
-	requestTotal = prometheus.NewCounterVec(prometheus.CounterOpts{
-		Name: "http_requests_total",
-		Help: "Http requests total count.",
-	}, []string{"router"})
-)
-
 func main() {
-	prometheus.MustRegister(requestTotal)
-
 	app := &cobra.Command{
 		Run: func(cmd *cobra.Command, args []string) {
 			// 初始化日志
@@ -60,6 +51,7 @@ func main() {
 			// 真正的业务 http server
 			// 初始化 gin
 			r := ginhelper.DefaultWithLogger(logger)
+			r.Use(metrics.NewInstrumentationMiddleware(nil))
 			r.Use(tracing.GinMiddleware(tracer, "gin", logger))
 			addRouters(r)
 
@@ -99,7 +91,6 @@ func main() {
 
 func addRouters(r *gin.Engine) {
 	r.GET("/", func(c *gin.Context) {
-		requestTotal.WithLabelValues("/").Inc()
 		go func() {
 			tracing.DoInSpan(c.Request.Context(), "bg work", func(ctx context.Context) {
 				time.Sleep(time.Second)
@@ -107,6 +98,10 @@ func addRouters(r *gin.Engine) {
 		}()
 		time.Sleep(2 * time.Second)
 		c.String(http.StatusOK, "Welcome Gin Server")
+	})
+
+	r.GET("/pets/:id", func(c *gin.Context) {
+		c.String(200, "hello %s", c.Param("id"))
 	})
 
 	r.GET("/test", ginhelper.ErrorWrapper(func(c *gin.Context) error {
