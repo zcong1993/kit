@@ -6,10 +6,11 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/zcong1993/x/pkg/metrics"
+
 	"github.com/gin-gonic/gin"
 	klog "github.com/go-kit/kit/log"
 	"github.com/oklog/run"
-	"github.com/prometheus/client_golang/prometheus"
 	"github.com/spf13/cobra"
 	"github.com/zcong1993/x/pkg/extrun"
 	"github.com/zcong1993/x/pkg/ginhelper"
@@ -24,7 +25,6 @@ var service2Cmd = &cobra.Command{
 	Use:   "service2",
 	Short: "sub command for service2",
 	Run: func(cmd *cobra.Command, args []string) {
-		prometheus.MustRegister(requestTotal)
 		// 初始化日志
 		logger := log2.MustNewLogger(cmd)
 
@@ -43,6 +43,7 @@ var service2Cmd = &cobra.Command{
 		// 真正的业务 http server
 		// 初始化 gin
 		r := ginhelper.DefaultWithLogger(logger)
+		r.Use(metrics.NewInstrumentationMiddleware(nil))
 		r.Use(tracing.GinMiddleware(tracer, "gin", logger))
 		addRoutersV2(r, httpClient(klog.With(logger, "component", "httpClient")))
 
