@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/zcong1993/x/pkg/server/exthttp/breaker"
+
 	"github.com/zcong1993/x/pkg/metrics"
 
 	"github.com/zcong1993/x/pkg/tracing"
@@ -53,6 +55,8 @@ func main() {
 			r := ginhelper.DefaultWithLogger(logger)
 			r.Use(metrics.NewInstrumentationMiddleware(nil))
 			r.Use(tracing.GinMiddleware(tracer, "gin", logger))
+			// breaker 中间件
+			r.Use(breaker.GinBreakerMiddleware(logger))
 			addRouters(r)
 
 			httpServer := exthttp.NewHttpServer(r, logger, exthttp.WithGracePeriod(time.Second*5), exthttp.WithListen(":8080"))
