@@ -32,6 +32,8 @@ func GinBreakerMiddleware(logger log.Logger) gin.HandlerFunc {
 		return breakerMap[key]
 	}
 
+	level.Info(logger).Log("component", "breaker", "msg", "load middleware")
+
 	return func(c *gin.Context) {
 		fullPath := c.FullPath()
 		// 404
