@@ -16,7 +16,7 @@ import (
 )
 
 // MuxServer 简单的 http mux server
-// 一般用来挂载 prometheus 和 pprof
+// 一般用来挂载 prometheus 和 pprof.
 type MuxServer struct {
 	*HttpServer
 	mux *http.ServeMux

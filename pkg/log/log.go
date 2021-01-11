@@ -22,7 +22,7 @@ var timestampFormat = klog.TimestampFormat(
 	"2006-01-02T15:04:05.000Z07:00",
 )
 
-// DefaultLogger return a simple logger, usually use before command logger init
+// DefaultLogger return a simple logger, usually use before command logger init.
 func DefaultLogger() klog.Logger {
 	logger := klog.NewLogfmtLogger(klog.NewSyncWriter(os.Stderr))
 	logger = klog.With(logger, "ts", timestampFormat, "caller", klog.DefaultCaller)

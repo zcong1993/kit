@@ -191,7 +191,7 @@ func (t *autotripperware) RoundTrip(r *http.Request) (*http.Response, error) {
 	return resp, err
 }
 
-// HTTPAutoTripperware is same as HTTPTripperware, but auto start child span and call span finish
+// HTTPAutoTripperware is same as HTTPTripperware, but auto start child span and call span finish.
 func HTTPAutoTripperware(logger log.Logger, next http.RoundTripper) http.RoundTripper {
 	return &autotripperware{
 		logger: logger,

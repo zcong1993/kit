@@ -20,7 +20,7 @@ func GinBreakerMiddleware(logger log.Logger) gin.HandlerFunc {
 	metrics := zero.Metrics
 
 	var lock sync.Mutex
-	breakerMap := make(map[string]breaker.Breaker, 0)
+	breakerMap := make(map[string]breaker.Breaker)
 
 	var getBreaker = func(key string) breaker.Breaker {
 		lock.Lock()
