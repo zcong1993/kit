@@ -1,0 +1,19 @@
+name: Build Test
+
+on: push
+
+jobs:
+  dockerBuildPush:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@main
+      - name: Set up Go
+        uses: actions/setup-go@master
+        with:
+          go-version: 1.15
+      - name: Test
+        run: |
+          go build _examples/gin
+          go build _examples/logger
+          go build _examples/mono
