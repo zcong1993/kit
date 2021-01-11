@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/zcong1993/x/pkg/extapp"
+
 	"github.com/zcong1993/x/pkg/shedder"
 
 	"github.com/zcong1993/x/pkg/server/exthttp/breaker"
@@ -88,15 +90,7 @@ func main() {
 		},
 	}
 
-	// 注册日志相关 flag
-	log2.Register(app.PersistentFlags())
-	register.RegisterFlags(app.PersistentFlags())
-	// 注册 shedder flag
-	shedder.Register(app.PersistentFlags())
-
-	if err := app.Execute(); err != nil {
-		log.Fatal(err)
-	}
+	extapp.RunDefaultHttpServerApp(app)
 }
 
 func addRouters(r *gin.Engine) {

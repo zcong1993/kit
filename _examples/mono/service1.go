@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/zcong1993/x/pkg/server/exthttp/breaker"
+	"github.com/zcong1993/x/pkg/shedder"
+
 	"github.com/zcong1993/x/pkg/metrics"
 
 	"github.com/gin-gonic/gin"
@@ -45,6 +48,10 @@ var (
 			r := ginhelper.DefaultWithLogger(logger)
 			r.Use(metrics.NewInstrumentationMiddleware(nil))
 			r.Use(tracing.GinMiddleware(tracer, "gin", logger))
+			// shedder 中间件
+			r.Use(shedder.GinShedderMiddleware(shedder.NewShedderFromCmd(cmd), logger))
+			// breaker 中间件
+			r.Use(breaker.GinBreakerMiddleware(logger))
 			addRouters(r)
 
 			httpServer := exthttp.NewHttpServer(r, logger, exthttp.WithGracePeriod(time.Second*5), exthttp.WithListen(":8081"))
