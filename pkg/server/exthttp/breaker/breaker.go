@@ -25,8 +25,8 @@ func GinBreakerMiddleware(logger log.Logger) gin.HandlerFunc {
 	var getBreaker = func(key string) breaker.Breaker {
 		lock.Lock()
 		defer lock.Unlock()
-		if breaker, ok := breakerMap[key]; ok {
-			return breaker
+		if brk, ok := breakerMap[key]; ok {
+			return brk
 		}
 		breakerMap[key] = breaker.NewBreaker(breaker.WithName(key))
 		return breakerMap[key]
@@ -47,8 +47,6 @@ func GinBreakerMiddleware(logger log.Logger) gin.HandlerFunc {
 		if err != nil {
 			metrics.AddDrop()
 			level.Error(logger).Log("component", "breaker", "msg", "[http] dropped", "url", c.Request.URL.String(), "ip", c.ClientIP())
-			//logx.Errorf("[http] dropped, %s - %s - %s",
-			//	r.RequestURI, httpx.GetRemoteAddr(r), r.UserAgent())
 			c.AbortWithStatus(http.StatusServiceUnavailable)
 			return
 		}
