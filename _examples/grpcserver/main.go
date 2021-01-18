@@ -5,6 +5,10 @@ import (
 	"log"
 	"time"
 
+	"github.com/zcong1993/x/pkg/metrics"
+	"github.com/zcong1993/x/pkg/tracing/register"
+	"google.golang.org/grpc"
+
 	"github.com/oklog/run"
 	"github.com/spf13/cobra"
 	"github.com/zcong1993/x/_examples/grpcserver/pb"
@@ -14,7 +18,6 @@ import (
 	"github.com/zcong1993/x/pkg/prober"
 	"github.com/zcong1993/x/pkg/server/extgrpc"
 	"github.com/zcong1993/x/pkg/server/exthttp"
-	"google.golang.org/grpc"
 )
 
 type helloService struct {
@@ -36,13 +39,15 @@ func main() {
 
 			var g run.Group
 
+			me := metrics.InitMetrics()
+
 			// 初始化 tracer
-			//tracer := register.MustInitTracer(&g, cmd, logger, nil)
+			tracer := register.MustInitTracer(&g, cmd, logger, me)
 
 			// 服务健康状态
 			grpcProber := prober.NewGRPC()
 			httpProber := prober.NewHTTP()
-			statusProber := prober.Combine(httpProber, grpcProber, prober.NewInstrumentation("gin", logger))
+			statusProber := prober.Combine(httpProber, grpcProber, prober.NewInstrumentation("grpc", logger))
 
 			// 监听退出信号
 			extrun.HandleSignal(&g)
@@ -54,6 +59,8 @@ func main() {
 				extgrpc.WithServer(func(s *grpc.Server) {
 					pb.RegisterHelloServer(s, &helloService{})
 				}),
+				metrics.WithServerMetrics(logger, me),
+				extgrpc.WithServerTracing(tracer),
 			)
 
 			g.Add(func() error {
@@ -68,7 +75,7 @@ func main() {
 			// metrics 和 profiler 服务, debug 和监控
 			profileServer := exthttp.NewMuxServer(logger, exthttp.WithListen(":6060"), exthttp.WithServiceName("metrics/profiler"))
 			profileServer.RegisterProfiler()
-			profileServer.RegisterMetrics(nil)
+			profileServer.RegisterMetrics(me)
 			profileServer.RegisterProber(httpProber)
 			profileServer.RunGroup(&g)
 

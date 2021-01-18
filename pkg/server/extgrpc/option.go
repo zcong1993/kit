@@ -86,7 +86,7 @@ func WithStreamServerInterceptor(interceptor grpc.StreamServerInterceptor) Optio
 	}
 }
 
-// WithServerTracing setup tracer middleware
+// WithServerTracing setup tracer middleware.
 func WithServerTracing(tracer opentracing.Tracer) Option {
 	return CombineOptions(
 		WithUnaryServerInterceptor(tracing.UnaryServerInterceptor(tracer)),
@@ -100,4 +100,8 @@ func CombineOptions(options ...Option) Option {
 			f(o)
 		}
 	}
+}
+
+func NoopOption() Option {
+	return func(o *Options) {}
 }

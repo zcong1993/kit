@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-// ClientGrpcOpts return return options with tracing and metrics
+// ClientGrpcOpts return return options with tracing and metrics.
 func ClientGrpcOpts(tracer opentracing.Tracer, secure bool) []grpc.DialOption {
 	dialOpts := []grpc.DialOption{
 		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(math.MaxInt32)),
