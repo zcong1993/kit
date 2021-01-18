@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/zcong1993/x/pkg/server/exthttp/breaker"
+	"github.com/zcong1993/x/pkg/breaker"
 	"github.com/zcong1993/x/pkg/shedder"
 
 	"github.com/zcong1993/x/pkg/metrics"
