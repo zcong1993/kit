@@ -4,10 +4,13 @@ import (
 	"crypto/tls"
 	"time"
 
+	"github.com/opentracing/opentracing-go"
+	"github.com/zcong1993/x/pkg/tracing"
+
 	"google.golang.org/grpc"
 )
 
-type options struct {
+type Options struct {
 	registerServerFuncs []registerServerFunc
 
 	gracePeriod time.Duration
@@ -17,15 +20,18 @@ type options struct {
 	tlsConfig *tls.Config
 
 	grpcOpts []grpc.ServerOption
+
+	grpcUnaryServerInterceptors  []grpc.UnaryServerInterceptor
+	grpcStreamServerInterceptors []grpc.StreamServerInterceptor
 }
 
-type Option = func(o *options)
+type Option = func(o *Options)
 type registerServerFunc func(s *grpc.Server)
 
 // WithGRPCServer calls the passed gRPC registration functions on the created
 // grpc.Server.
 func WithServer(f registerServerFunc) Option {
-	return func(o *options) {
+	return func(o *Options) {
 		o.registerServerFuncs = append(o.registerServerFuncs, f)
 	}
 }
@@ -33,7 +39,7 @@ func WithServer(f registerServerFunc) Option {
 // WithGRPCServerOption allows adding raw grpc.ServerOption's to the
 // instantiated gRPC server.
 func WithGRPCServerOption(opt grpc.ServerOption) Option {
-	return func(o *options) {
+	return func(o *Options) {
 		o.grpcOpts = append(o.grpcOpts, opt)
 	}
 }
@@ -41,7 +47,7 @@ func WithGRPCServerOption(opt grpc.ServerOption) Option {
 // WithGracePeriod sets shutdown grace period for gRPC server.
 // Server waits connections to drain for specified amount of time.
 func WithGracePeriod(t time.Duration) Option {
-	return func(o *options) {
+	return func(o *Options) {
 		o.gracePeriod = t
 	}
 }
@@ -49,21 +55,49 @@ func WithGracePeriod(t time.Duration) Option {
 // WithListen sets address to listen for gRPC server.
 // Server accepts incoming connections on given address.
 func WithListen(s string) Option {
-	return func(o *options) {
+	return func(o *Options) {
 		o.listen = s
 	}
 }
 
 // WithNetwork sets network to listen for gRPC server e.g tcp, udp or unix.
 func WithNetwork(s string) Option {
-	return func(o *options) {
+	return func(o *Options) {
 		o.network = s
 	}
 }
 
 // WithTLSConfig sets TLS configuration for gRPC server.
 func WithTLSConfig(cfg *tls.Config) Option {
-	return func(o *options) {
+	return func(o *Options) {
 		o.tlsConfig = cfg
+	}
+}
+
+func WithUnaryServerInterceptor(interceptor grpc.UnaryServerInterceptor) Option {
+	return func(o *Options) {
+		o.grpcUnaryServerInterceptors = append(o.grpcUnaryServerInterceptors, interceptor)
+	}
+}
+
+func WithStreamServerInterceptor(interceptor grpc.StreamServerInterceptor) Option {
+	return func(o *Options) {
+		o.grpcStreamServerInterceptors = append(o.grpcStreamServerInterceptors, interceptor)
+	}
+}
+
+// WithServerTracing setup tracer middleware
+func WithServerTracing(tracer opentracing.Tracer) Option {
+	return CombineOptions(
+		WithUnaryServerInterceptor(tracing.UnaryServerInterceptor(tracer)),
+		WithStreamServerInterceptor(tracing.StreamServerInterceptor(tracer)),
+	)
+}
+
+func CombineOptions(options ...Option) Option {
+	return func(o *Options) {
+		for _, f := range options {
+			f(o)
+		}
 	}
 }

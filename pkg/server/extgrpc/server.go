@@ -4,6 +4,8 @@ import (
 	"context"
 	"net"
 
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/pkg/errors"
@@ -20,12 +22,12 @@ type Server struct {
 	srv      *grpc.Server
 	listener net.Listener
 
-	opts options
+	opts Options
 }
 
 func NewServer(logger log.Logger, probe *prober.GRPCProbe, opts ...Option) *Server {
 	logger = log.With(logger, "service", "gRPC/server")
-	options := options{
+	options := Options{
 		network: "tcp",
 	}
 
@@ -35,6 +37,14 @@ func NewServer(logger log.Logger, probe *prober.GRPCProbe, opts ...Option) *Serv
 
 	if options.tlsConfig != nil {
 		options.grpcOpts = append(options.grpcOpts, grpc.Creds(credentials.NewTLS(options.tlsConfig)))
+	}
+
+	if len(options.grpcUnaryServerInterceptors) > 0 {
+		options.grpcOpts = append(options.grpcOpts, grpc_middleware.WithUnaryServerChain(options.grpcUnaryServerInterceptors...))
+	}
+
+	if len(options.grpcStreamServerInterceptors) > 0 {
+		options.grpcOpts = append(options.grpcOpts, grpc_middleware.WithStreamServerChain(options.grpcStreamServerInterceptors...))
 	}
 
 	s := grpc.NewServer(options.grpcOpts...)
