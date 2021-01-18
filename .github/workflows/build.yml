@@ -14,6 +14,8 @@ jobs:
           go-version: 1.15
       - name: Test
         run: |
-          go build ./_examples/gin
-          go build ./_examples/logger
-          go build ./_examples/mono
+          for example in $(ls ./_examples)
+          do
+            echo "build $example"
+            go build "./_examples/${example}"
+          done
