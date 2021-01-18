@@ -21,3 +21,14 @@ func RunDefaultHttpServerApp(app *cobra.Command) {
 		log.Fatal(err)
 	}
 }
+
+func RunDefaultGrpcServerApp(app *cobra.Command) {
+	// 注册日志相关 flag
+	log2.Register(app.PersistentFlags())
+	// 注册 tracing flag
+	register.RegisterFlags(app.PersistentFlags())
+
+	if err := app.Execute(); err != nil {
+		log.Fatal(err)
+	}
+}
