@@ -3,10 +3,15 @@ package metrics
 import (
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/prometheus/client_golang/prometheus"
+)
+
+var (
+	httpOnce sync.Once
 )
 
 var (
@@ -45,7 +50,9 @@ func NewInstrumentationMiddleware(reg prometheus.Registerer) gin.HandlerFunc {
 		reg = prometheus.DefaultRegisterer
 	}
 
-	reg.MustRegister(requestDuration, requestSize, requestsTotal, responseSize)
+	httpOnce.Do(func() {
+		reg.MustRegister(requestDuration, requestSize, requestsTotal, responseSize)
+	})
 
 	return func(c *gin.Context) {
 		start := time.Now()
