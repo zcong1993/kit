@@ -16,16 +16,12 @@ import (
 	"github.com/zcong1993/x/pkg/metrics"
 
 	"github.com/zcong1993/x/pkg/tracing"
-	"github.com/zcong1993/x/pkg/tracing/register"
 
 	"github.com/zcong1993/x/pkg/prober"
 
 	"github.com/zcong1993/x/pkg/server/exthttp"
 
 	"github.com/spf13/cobra"
-	log2 "github.com/zcong1993/x/pkg/log"
-
-	"github.com/oklog/run"
 	"github.com/zcong1993/x/pkg/extrun"
 
 	"github.com/gin-gonic/gin"
@@ -39,25 +35,24 @@ type Input struct {
 func main() {
 	app := &cobra.Command{
 		Run: func(cmd *cobra.Command, args []string) {
-			// 初始化日志
-			logger := log2.MustNewLogger(cmd)
+			extApp := extapp.NewFromCmd(cmd)
 
-			var g run.Group
-
-			// 初始化 tracer
-			tracer := register.MustInitTracer(&g, cmd, logger, nil)
+			logger := extApp.Logger
+			tracer := extApp.Tracer
+			reg := extApp.Reg
+			g := extApp.G
 
 			// 服务健康状态
 			httpProber := prober.NewHTTP()
 			statusProber := prober.Combine(httpProber, prober.NewInstrumentation("gin", logger))
 
 			// 监听退出信号
-			extrun.HandleSignal(&g)
+			extrun.HandleSignal(g)
 
 			// 真正的业务 http server
 			// 初始化 gin
 			r := ginhelper.DefaultWithLogger(logger)
-			r.Use(metrics.NewInstrumentationMiddleware(nil))
+			r.Use(metrics.NewInstrumentationMiddleware(reg))
 			r.Use(tracing.GinMiddleware(tracer, "gin", logger))
 			// shedder 中间件
 			r.Use(shedder.GinShedderMiddleware(shedder.NewShedderFromCmd(cmd), logger))
@@ -79,9 +74,9 @@ func main() {
 			// metrics 和 profiler 服务, debug 和监控
 			profileServer := exthttp.NewMuxServer(logger, exthttp.WithListen(":6060"), exthttp.WithServiceName("metrics/profiler"))
 			profileServer.RegisterProfiler()
-			profileServer.RegisterMetrics(nil)
+			profileServer.RegisterMetrics(reg)
 			profileServer.RegisterProber(httpProber)
-			profileServer.RunGroup(&g)
+			profileServer.RunGroup(g)
 
 			statusProber.Ready()
 			if err := g.Run(); err != nil {
