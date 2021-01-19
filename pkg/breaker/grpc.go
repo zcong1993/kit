@@ -3,34 +3,17 @@ package breaker
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	"github.com/zcong1993/x/pkg/server/extgrpc"
 	"github.com/zcong1993/x/pkg/zero"
 
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"github.com/tal-tech/go-zero/core/breaker"
 	"github.com/tal-tech/go-zero/core/stat"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
-
-var (
-	grpcLock       sync.Mutex
-	grpcBreakerMap = make(map[string]breaker.Breaker)
-)
-
-func getGrpcBreaker(key string) breaker.Breaker {
-	grpcLock.Lock()
-	defer grpcLock.Unlock()
-	if brk, ok := grpcBreakerMap[key]; ok {
-		return brk
-	}
-	grpcBreakerMap[key] = breaker.NewBreaker(breaker.WithName(key))
-	return grpcBreakerMap[key]
-}
 
 func WithGrpcServerBreaker(logger log.Logger) extgrpc.Option {
 	zero.SetupMetrics()
@@ -38,15 +21,17 @@ func WithGrpcServerBreaker(logger log.Logger) extgrpc.Option {
 
 	level.Info(logger).Log("component", "breaker-grpc", "msg", "load middleware")
 
+	brkGetter := NewBrkGetter()
+
 	return extgrpc.CombineOptions(
-		extgrpc.WithUnaryServerInterceptor(unaryServerInterceptor(logger, metrics)),
-		extgrpc.WithStreamServerInterceptor(streamServerInterceptor(logger, metrics)),
+		extgrpc.WithUnaryServerInterceptor(unaryServerInterceptor(logger, metrics, brkGetter)),
+		extgrpc.WithStreamServerInterceptor(streamServerInterceptor(logger, metrics, brkGetter)),
 	)
 }
 
-func unaryServerInterceptor(logger log.Logger, metrics *stat.Metrics) grpc.UnaryServerInterceptor {
+func unaryServerInterceptor(logger log.Logger, metrics *stat.Metrics, brkGetter *BrkGetter) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
-		brk := getGrpcBreaker(info.FullMethod)
+		brk := brkGetter.Get(info.FullMethod)
 		// breaker logic
 		promise, err := brk.Allow()
 		if err != nil {
@@ -68,9 +53,9 @@ func unaryServerInterceptor(logger log.Logger, metrics *stat.Metrics) grpc.Unary
 	}
 }
 
-func streamServerInterceptor(logger log.Logger, metrics *stat.Metrics) grpc.StreamServerInterceptor {
+func streamServerInterceptor(logger log.Logger, metrics *stat.Metrics, brkGetter *BrkGetter) grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		brk := getGrpcBreaker(info.FullMethod)
+		brk := brkGetter.Get(info.FullMethod)
 		// breaker logic
 		promise, err := brk.Allow()
 		if err != nil {

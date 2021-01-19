@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"sync"
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
-	"github.com/tal-tech/go-zero/core/breaker"
 	"github.com/zcong1993/x/pkg/zero"
 )
 
@@ -18,19 +16,7 @@ const breakerSeparator = "://"
 func GinBreakerMiddleware(logger log.Logger) gin.HandlerFunc {
 	zero.SetupMetrics()
 	metrics := zero.Metrics
-
-	var lock sync.Mutex
-	breakerMap := make(map[string]breaker.Breaker)
-
-	var getBreaker = func(key string) breaker.Breaker {
-		lock.Lock()
-		defer lock.Unlock()
-		if brk, ok := breakerMap[key]; ok {
-			return brk
-		}
-		breakerMap[key] = breaker.NewBreaker(breaker.WithName(key))
-		return breakerMap[key]
-	}
+	brkGetter := NewBrkGetter()
 
 	level.Info(logger).Log("component", "breaker", "msg", "load middleware")
 
@@ -42,7 +28,7 @@ func GinBreakerMiddleware(logger log.Logger) gin.HandlerFunc {
 			return
 		}
 		key := strings.Join([]string{c.Request.Method, fullPath}, breakerSeparator)
-		brk := getBreaker(key)
+		brk := brkGetter.Get(key)
 
 		// breaker logic
 		promise, err := brk.Allow()
