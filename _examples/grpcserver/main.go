@@ -5,6 +5,11 @@ import (
 	"log"
 	"time"
 
+	"github.com/zcong1993/x/pkg/breaker"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/zcong1993/x/pkg/shedder"
 
 	"github.com/zcong1993/x/pkg/metrics"
@@ -27,9 +32,14 @@ type helloService struct {
 }
 
 func (h *helloService) Get(ctx context.Context, in *pb.HelloRequest) (*pb.HelloResponse, error) {
+	if in.Sleep > 5 {
+		return nil, status.Error(codes.ResourceExhausted, "test")
+	}
+
 	if in.Sleep > 0 {
 		time.Sleep(time.Duration(int64(time.Second) * int64(in.Sleep)))
 	}
+
 	return &pb.HelloResponse{Value: "hello " + in.Name}, nil
 }
 
@@ -67,6 +77,7 @@ func main() {
 				metrics.WithServerMetrics(logger, me),
 				extgrpc.WithServerTracing(tracer),
 				shedder.WithGrpcShedder(logger, sd),
+				breaker.WithGrpcServerBreaker(logger),
 			)
 
 			g.Add(func() error {

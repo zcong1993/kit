@@ -47,13 +47,11 @@ func unaryServerInterceptor(logger log.Logger, shedder load.Shedder, metrics *st
 
 		resp, err := handler(ctx, req)
 
-		errStatus, _ := status.FromError(err)
-
-		if errStatus.Code() == codes.ResourceExhausted {
-			promise.Fail()
-		} else {
+		if err == nil {
 			sheddingStat.IncrementPass()
 			promise.Pass()
+		} else if errStatus, _ := status.FromError(err); errStatus.Code() == codes.ResourceExhausted {
+			promise.Fail()
 		}
 
 		return resp, err
@@ -73,13 +71,11 @@ func streamServerInterceptor(logger log.Logger, shedder load.Shedder, metrics *s
 
 		err = handler(srv, stream)
 
-		errStatus, _ := status.FromError(err)
-
-		if errStatus.Code() == codes.ResourceExhausted {
-			promise.Fail()
-		} else {
+		if err == nil {
 			sheddingStat.IncrementPass()
 			promise.Pass()
+		} else if errStatus, _ := status.FromError(err); errStatus.Code() == codes.ResourceExhausted {
+			promise.Fail()
 		}
 
 		return err
