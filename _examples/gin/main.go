@@ -85,7 +85,7 @@ func main() {
 		},
 	}
 
-	extapp.RunDefaultHttpServerApp(app)
+	extapp.RunDefaultServerApp(app)
 }
 
 func addRouters(r *gin.Engine) {

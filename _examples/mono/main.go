@@ -14,5 +14,5 @@ var (
 
 func main() {
 	app.AddCommand(service1Cmd, service2Cmd)
-	extapp.RunDefaultHttpServerApp(app)
+	extapp.RunDefaultServerApp(app)
 }

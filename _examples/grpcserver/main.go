@@ -5,6 +5,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/zcong1993/x/pkg/shedder"
+
 	"github.com/zcong1993/x/pkg/metrics"
 	"github.com/zcong1993/x/pkg/tracing/register"
 	"google.golang.org/grpc"
@@ -44,6 +46,9 @@ func main() {
 			// 初始化 tracer
 			tracer := register.MustInitTracer(&g, cmd, logger, me)
 
+			// shedder
+			sd := shedder.NewShedderFromCmd(cmd)
+
 			// 服务健康状态
 			grpcProber := prober.NewGRPC()
 			httpProber := prober.NewHTTP()
@@ -61,6 +66,7 @@ func main() {
 				}),
 				metrics.WithServerMetrics(logger, me),
 				extgrpc.WithServerTracing(tracer),
+				shedder.WithGrpcShedder(logger, sd),
 			)
 
 			g.Add(func() error {
@@ -86,5 +92,5 @@ func main() {
 		},
 	}
 
-	extapp.RunDefaultGrpcServerApp(app)
+	extapp.RunDefaultServerApp(app)
 }

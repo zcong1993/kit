@@ -1,6 +1,8 @@
 package extapp
 
 import (
+	log3 "log"
+
 	"github.com/go-kit/kit/log"
 	"github.com/oklog/run"
 	"github.com/opentracing/opentracing-go"
@@ -8,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 	log2 "github.com/zcong1993/x/pkg/log"
 	"github.com/zcong1993/x/pkg/metrics"
+	"github.com/zcong1993/x/pkg/shedder"
 	"github.com/zcong1993/x/pkg/tracing/register"
 )
 
@@ -36,5 +39,19 @@ func NewFromCmd(cmd *cobra.Command) *App {
 		Tracer: tracer,
 		Cmd:    cmd,
 		G:      &g,
+	}
+}
+
+func RunDefaultServerApp(app *cobra.Command) {
+	// 注册日志相关 flag
+	log2.Register(app.PersistentFlags())
+	// 注册 tracing flag
+	register.RegisterFlags(app.PersistentFlags())
+
+	// 注册 shedder flag
+	shedder.Register(app.PersistentFlags())
+
+	if err := app.Execute(); err != nil {
+		log3.Fatal(err)
 	}
 }
