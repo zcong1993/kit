@@ -1,0 +1,8 @@
+type: JAEGER
+config:
+  service_name: "gateway"
+  disabled: false
+  rpc_metrics: false
+  tags: ""
+  sampler_type: "const"
+  sampler_param: 1
