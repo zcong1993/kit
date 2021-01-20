@@ -46,13 +46,11 @@ var (
 )
 
 func NewInstrumentationMiddleware(reg prometheus.Registerer) gin.HandlerFunc {
-	if reg == nil {
-		reg = prometheus.DefaultRegisterer
+	if reg != nil {
+		httpOnce.Do(func() {
+			reg.MustRegister(requestDuration, requestSize, requestsTotal, responseSize)
+		})
 	}
-
-	httpOnce.Do(func() {
-		reg.MustRegister(requestDuration, requestSize, requestsTotal, responseSize)
-	})
 
 	return func(c *gin.Context) {
 		start := time.Now()
