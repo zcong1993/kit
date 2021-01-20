@@ -111,7 +111,7 @@ var gatewayCmd = &cobra.Command{
 }
 
 func init() {
-	gatewayCmd.Flags().String("server-addr", ":8081", "grpc server addr")
-	gatewayCmd.Flags().String("metrics-addr", ":6061", "metrics server addr")
+	gatewayCmd.Flags().String("server-addr", ":8080", "grpc server addr")
+	gatewayCmd.Flags().String("metrics-addr", ":6060", "metrics server addr")
 	gatewayCmd.Flags().String("grpc-server-addr", "localhost:8081", "upstream grpc server addr")
 }

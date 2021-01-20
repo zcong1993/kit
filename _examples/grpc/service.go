@@ -5,6 +5,8 @@ import (
 	"log"
 	"time"
 
+	"github.com/zcong1993/x/pkg/tracing"
+
 	"github.com/oklog/run"
 	"github.com/spf13/cobra"
 	"github.com/zcong1993/x/_examples/grpc/pb"
@@ -30,6 +32,12 @@ func (h *helloService) Get(ctx context.Context, in *pb.HelloRequest) (*pb.HelloR
 	if in.Sleep > 5 {
 		return nil, status.Error(codes.ResourceExhausted, "test")
 	}
+
+	go func() {
+		tracing.DoInSpan(ctx, "bg work", func(ctx context.Context) {
+			time.Sleep(time.Second)
+		})
+	}()
 
 	if in.Sleep > 0 {
 		time.Sleep(time.Duration(int64(time.Second) * int64(in.Sleep)))
