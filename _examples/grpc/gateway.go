@@ -4,21 +4,20 @@ import (
 	"log"
 	"time"
 
+	"github.com/zcong1993/x/pkg/extapp"
+
 	"github.com/gin-gonic/gin"
-	"github.com/oklog/run"
 	"github.com/spf13/cobra"
 	"github.com/zcong1993/x/_examples/grpc/pb"
 	"github.com/zcong1993/x/pkg/breaker"
 	"github.com/zcong1993/x/pkg/extgrpcc"
 	"github.com/zcong1993/x/pkg/extrun"
 	"github.com/zcong1993/x/pkg/ginhelper"
-	log2 "github.com/zcong1993/x/pkg/log"
 	"github.com/zcong1993/x/pkg/metrics"
 	"github.com/zcong1993/x/pkg/prober"
 	"github.com/zcong1993/x/pkg/server/exthttp"
 	"github.com/zcong1993/x/pkg/shedder"
 	"github.com/zcong1993/x/pkg/tracing"
-	"github.com/zcong1993/x/pkg/tracing/register"
 	"google.golang.org/grpc"
 )
 
@@ -26,27 +25,24 @@ var gatewayCmd = &cobra.Command{
 	Use:   "gateway",
 	Short: "sub command for gateway",
 	Run: func(cmd *cobra.Command, args []string) {
-		// 初始化日志
-		logger := log2.MustNewLogger(cmd)
+		extApp := extapp.NewFromCmd(cmd)
 
-		var g run.Group
-
-		me := metrics.InitMetrics()
-
-		// 初始化 tracer
-		tracer := register.MustInitTracer(&g, cmd, logger, me)
+		logger := extApp.Logger
+		tracer := extApp.Tracer
+		reg := extApp.Reg
+		g := extApp.G
 
 		// 服务健康状态
 		httpProber := prober.NewHTTP()
 		statusProber := prober.Combine(httpProber, prober.NewInstrumentation("gin", logger))
 
 		// 监听退出信号
-		extrun.HandleSignal(&g)
+		extrun.HandleSignal(g)
 
 		// 真正的业务 http server
 		// 初始化 gin
 		r := ginhelper.DefaultWithLogger(logger)
-		r.Use(metrics.NewInstrumentationMiddleware(nil))
+		r.Use(metrics.NewInstrumentationMiddleware(reg))
 		r.Use(tracing.GinMiddleware(tracer, "gin", logger))
 		// shedder 中间件
 		r.Use(shedder.GinShedderMiddleware(shedder.NewShedderFromCmd(cmd), logger))
@@ -57,7 +53,7 @@ var gatewayCmd = &cobra.Command{
 			return cmd.Flags().GetString("grpc-server-addr")
 		}).(string)
 
-		conn, err := grpc.Dial(upstreamAddr, extgrpcc.ClientGrpcOpts(tracer, me, false)...)
+		conn, err := grpc.Dial(upstreamAddr, extgrpcc.ClientGrpcOpts(tracer, reg, false)...)
 		grpcClient := pb.NewHelloClient(conn)
 
 		if err != nil {
@@ -99,9 +95,9 @@ var gatewayCmd = &cobra.Command{
 		// metrics 和 profiler 服务, debug 和监控
 		profileServer := exthttp.NewMuxServer(logger, exthttp.WithListen(metricsAddr), exthttp.WithServiceName("metrics/profiler"))
 		profileServer.RegisterProfiler()
-		profileServer.RegisterMetrics(nil)
+		profileServer.RegisterMetrics(reg)
 		profileServer.RegisterProber(httpProber)
-		profileServer.RunGroup(&g)
+		profileServer.RunGroup(g)
 
 		statusProber.Ready()
 		if err := g.Run(); err != nil {

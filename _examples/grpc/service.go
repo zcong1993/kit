@@ -5,20 +5,19 @@ import (
 	"log"
 	"time"
 
+	"github.com/zcong1993/x/pkg/extapp"
+
 	"github.com/zcong1993/x/pkg/tracing"
 
-	"github.com/oklog/run"
 	"github.com/spf13/cobra"
 	"github.com/zcong1993/x/_examples/grpc/pb"
 	"github.com/zcong1993/x/pkg/breaker"
 	"github.com/zcong1993/x/pkg/extrun"
-	log2 "github.com/zcong1993/x/pkg/log"
 	"github.com/zcong1993/x/pkg/metrics"
 	"github.com/zcong1993/x/pkg/prober"
 	"github.com/zcong1993/x/pkg/server/extgrpc"
 	"github.com/zcong1993/x/pkg/server/exthttp"
 	"github.com/zcong1993/x/pkg/shedder"
-	"github.com/zcong1993/x/pkg/tracing/register"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -50,15 +49,12 @@ var serviceCmd = &cobra.Command{
 	Use:   "service",
 	Short: "sub command for service",
 	Run: func(cmd *cobra.Command, args []string) {
-		// 初始化日志
-		logger := log2.MustNewLogger(cmd)
+		extApp := extapp.NewFromCmd(cmd)
 
-		var g run.Group
-
-		me := metrics.InitMetrics()
-
-		// 初始化 tracer
-		tracer := register.MustInitTracer(&g, cmd, logger, me)
+		logger := extApp.Logger
+		tracer := extApp.Tracer
+		reg := extApp.Reg
+		g := extApp.G
 
 		// shedder
 		sd := shedder.NewShedderFromCmd(cmd)
@@ -69,7 +65,7 @@ var serviceCmd = &cobra.Command{
 		statusProber := prober.Combine(httpProber, grpcProber, prober.NewInstrumentation("grpc", logger))
 
 		// 监听退出信号
-		extrun.HandleSignal(&g)
+		extrun.HandleSignal(g)
 
 		addr := mustGet(func() (interface{}, error) {
 			return cmd.Flags().GetString("server-addr")
@@ -82,7 +78,7 @@ var serviceCmd = &cobra.Command{
 			extgrpc.WithServer(func(s *grpc.Server) {
 				pb.RegisterHelloServer(s, &helloService{})
 			}),
-			metrics.WithServerMetrics(logger, me),
+			metrics.WithServerMetrics(logger, reg),
 			extgrpc.WithServerTracing(tracer),
 			shedder.WithGrpcShedder(logger, sd),
 			breaker.WithGrpcServerBreaker(logger),
@@ -104,9 +100,9 @@ var serviceCmd = &cobra.Command{
 		// metrics 和 profiler 服务, debug 和监控
 		profileServer := exthttp.NewMuxServer(logger, exthttp.WithListen(metricsAddr), exthttp.WithServiceName("metrics/profiler"))
 		profileServer.RegisterProfiler()
-		profileServer.RegisterMetrics(me)
+		profileServer.RegisterMetrics(reg)
 		profileServer.RegisterProber(httpProber)
-		profileServer.RunGroup(&g)
+		profileServer.RunGroup(g)
 
 		statusProber.Ready()
 		if err := g.Run(); err != nil {
