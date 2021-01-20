@@ -5,9 +5,9 @@ import (
 	"log"
 	"time"
 
-	"github.com/zcong1993/x/pkg/extapp"
+	"github.com/zcong1993/x/pkg/extgrpcc"
 
-	"github.com/zcong1993/x/pkg/tracing"
+	"github.com/zcong1993/x/pkg/extapp"
 
 	"github.com/spf13/cobra"
 	"github.com/zcong1993/x/_examples/grpc/pb"
@@ -19,35 +19,20 @@ import (
 	"github.com/zcong1993/x/pkg/server/exthttp"
 	"github.com/zcong1993/x/pkg/shedder"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
-type helloService struct {
+type middleService struct {
+	client pb.HelloClient
 	pb.UnimplementedHelloServer
 }
 
-func (h *helloService) Get(ctx context.Context, in *pb.HelloRequest) (*pb.HelloResponse, error) {
-	if in.Sleep > 5 {
-		return nil, status.Error(codes.ResourceExhausted, "test")
-	}
-
-	go func() {
-		tracing.DoInSpan(ctx, "bg work", func(ctx context.Context) {
-			time.Sleep(time.Second)
-		})
-	}()
-
-	if in.Sleep > 0 {
-		time.Sleep(time.Duration(int64(time.Second) * int64(in.Sleep)))
-	}
-
-	return &pb.HelloResponse{Value: "hello " + in.Name}, nil
+func (h *middleService) Get(ctx context.Context, in *pb.HelloRequest) (*pb.HelloResponse, error) {
+	return h.client.Get(ctx, in)
 }
 
-var serviceCmd = &cobra.Command{
-	Use:   "service",
-	Short: "sub command for service",
+var middleCmd = &cobra.Command{
+	Use:   "middle",
+	Short: "sub command for middle service",
 	Run: func(cmd *cobra.Command, args []string) {
 		extApp := extapp.NewFromCmd(cmd)
 
@@ -62,7 +47,7 @@ var serviceCmd = &cobra.Command{
 		// 服务健康状态
 		grpcProber := prober.NewGRPC()
 		httpProber := prober.NewHTTP()
-		statusProber := prober.Combine(httpProber, grpcProber, prober.NewInstrumentation("grpc", logger))
+		statusProber := prober.Combine(httpProber, grpcProber, prober.NewInstrumentation("middle", logger))
 
 		// 监听退出信号
 		extrun.HandleSignal(g)
@@ -71,12 +56,23 @@ var serviceCmd = &cobra.Command{
 			return cmd.Flags().GetString("server-addr")
 		}).(string)
 
+		upstreamAddr := mustGet(func() (interface{}, error) {
+			return cmd.Flags().GetString("grpc-server-addr")
+		}).(string)
+
+		conn, err := grpc.Dial(upstreamAddr, extgrpcc.ClientGrpcOpts(tracer, reg, false)...)
+		grpcClient := pb.NewHelloClient(conn)
+
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		// 真正的业务 grpc server
 		grpcServer := extgrpc.NewServer(logger, grpcProber,
 			extgrpc.WithGracePeriod(time.Second*5),
 			extgrpc.WithListen(addr),
 			extgrpc.WithServer(func(s *grpc.Server) {
-				pb.RegisterHelloServer(s, &helloService{})
+				pb.RegisterHelloServer(s, &middleService{client: grpcClient})
 			}),
 			metrics.WithServerMetrics(logger, reg),
 			extgrpc.WithServerTracing(tracer),
@@ -111,15 +107,8 @@ var serviceCmd = &cobra.Command{
 	},
 }
 
-func mustGet(f func() (interface{}, error)) interface{} {
-	val, err := f()
-	if err != nil {
-		log.Fatal(err)
-	}
-	return val
-}
-
 func init() {
-	serviceCmd.Flags().String("server-addr", ":8082", "grpc server addr")
-	serviceCmd.Flags().String("metrics-addr", ":6062", "metrics server addr")
+	middleCmd.Flags().String("server-addr", ":8081", "grpc server addr")
+	middleCmd.Flags().String("metrics-addr", ":6061", "metrics server addr")
+	middleCmd.Flags().String("grpc-server-addr", "localhost:8082", "upstream grpc server addr")
 }

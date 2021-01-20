@@ -11,7 +11,7 @@ var app = &cobra.Command{
 }
 
 func main() {
-	app.AddCommand(serviceCmd, gatewayCmd)
+	app.AddCommand(serviceCmd, gatewayCmd, middleCmd)
 
 	extapp.RunDefaultServerApp(app)
 }
