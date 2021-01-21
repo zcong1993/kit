@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"time"
 
@@ -71,9 +70,7 @@ var (
 			profileServer.RunGroup(g)
 
 			statusProber.Ready()
-			if err := g.Run(); err != nil {
-				log.Fatal("start error ", err)
-			}
+			extapp.FatalOnErrorf(g.Run(), "start error")
 		},
 	}
 )

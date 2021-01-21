@@ -2,7 +2,6 @@ package main
 
 import (
 	"io"
-	"log"
 	"net/http"
 	"time"
 
@@ -71,9 +70,7 @@ var service2Cmd = &cobra.Command{
 		profileServer.RunGroup(g)
 
 		statusProber.Ready()
-		if err := g.Run(); err != nil {
-			log.Fatal("start error ", err)
-		}
+		extapp.FatalOnErrorf(g.Run(), "start error")
 	},
 }
 

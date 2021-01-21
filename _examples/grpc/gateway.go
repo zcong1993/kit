@@ -100,9 +100,7 @@ var gatewayCmd = &cobra.Command{
 		profileServer.RunGroup(g)
 
 		statusProber.Ready()
-		if err := g.Run(); err != nil {
-			log.Fatal("start error ", err)
-		}
+		extapp.FatalOnErrorf(g.Run(), "start error")
 	},
 }
 

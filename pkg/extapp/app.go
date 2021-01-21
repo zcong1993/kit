@@ -1,7 +1,10 @@
 package extapp
 
 import (
-	log3 "log"
+	"fmt"
+	"os"
+
+	"github.com/pkg/errors"
 
 	"github.com/go-kit/kit/log"
 	"github.com/oklog/run"
@@ -51,7 +54,22 @@ func RunDefaultServerApp(app *cobra.Command) {
 	// 注册 shedder flag
 	shedder.Register(app.PersistentFlags())
 
-	if err := app.Execute(); err != nil {
-		log3.Fatal(err)
+	FatalOnError(app.Execute())
+}
+
+func FatalOnError(err error) {
+	if err != nil {
+		Fatal(err)
 	}
+}
+
+func FatalOnErrorf(err error, format string, args ...interface{}) {
+	if err != nil {
+		Fatal(errors.Wrapf(err, format, args...))
+	}
+}
+
+func Fatal(msgs ...interface{}) {
+	fmt.Fprintln(os.Stderr, msgs...)
+	os.Exit(1)
 }

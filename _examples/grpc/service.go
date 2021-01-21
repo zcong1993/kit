@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/zcong1993/x/pkg/extapp"
@@ -105,17 +104,13 @@ var serviceCmd = &cobra.Command{
 		profileServer.RunGroup(g)
 
 		statusProber.Ready()
-		if err := g.Run(); err != nil {
-			log.Fatal("start error ", err)
-		}
+		extapp.FatalOnErrorf(g.Run(), "start error")
 	},
 }
 
 func mustGet(f func() (interface{}, error)) interface{} {
 	val, err := f()
-	if err != nil {
-		log.Fatal(err)
-	}
+	extapp.FatalOnError(err)
 	return val
 }
 

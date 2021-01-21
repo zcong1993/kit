@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -79,9 +78,7 @@ func main() {
 			profileServer.RunGroup(g)
 
 			statusProber.Ready()
-			if err := g.Run(); err != nil {
-				log.Fatal("start error ", err)
-			}
+			extapp.FatalOnErrorf(g.Run(), "start error")
 		},
 	}
 

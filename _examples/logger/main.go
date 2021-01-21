@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/zcong1993/x/pkg/extapp"
+
 	"github.com/zcong1993/x/pkg/extflag"
 
 	"github.com/go-kit/kit/log/level"
@@ -38,9 +40,5 @@ func main() {
 
 	rootCmd.AddCommand(testCmd)
 
-	err := rootCmd.Execute()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	extapp.FatalOnError(rootCmd.Execute())
 }
