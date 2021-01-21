@@ -71,7 +71,11 @@ func main() {
 			})
 
 			// 启动内部 http 服务, 健康检查路由, 监控指标路由, pprof
-			extapp.StartInnerHttpServer(extApp, httpProber)
+			mux := extapp.StartInnerHttpServer(extApp, httpProber)
+			// 可以在增加额外路由
+			mux.HandleFunc("/xxx", func(writer http.ResponseWriter, request *http.Request) {
+				writer.Write([]byte("ok"))
+			})
 
 			statusProber.Ready()
 			extapp.FatalOnErrorf(g.Run(), "start error")

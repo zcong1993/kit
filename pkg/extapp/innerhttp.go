@@ -24,7 +24,7 @@ func RegisterInnerHttpServerFlags(flagSet *pflag.FlagSet) {
 }
 
 // StartInnerHttpServer 启动服务, 会根据 flags 参数调整功能.
-func StartInnerHttpServer(app *App, httpProber *prober.HTTPProbe, opts ...exthttp.OptionFunc) {
+func StartInnerHttpServer(app *App, httpProber *prober.HTTPProbe, opts ...exthttp.OptionFunc) *exthttp.MuxServer {
 	addrVar, err := app.Cmd.Flags().GetString(addr)
 	FatalOnErrorf(err, "get %s error", addr)
 
@@ -53,4 +53,6 @@ func StartInnerHttpServer(app *App, httpProber *prober.HTTPProbe, opts ...exthtt
 	profileServer.RegisterProber(httpProber)
 
 	profileServer.RunGroup(app.G)
+
+	return profileServer
 }
