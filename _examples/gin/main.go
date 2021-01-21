@@ -70,12 +70,8 @@ func main() {
 				statusProber.NotHealthy(err)
 			})
 
-			// metrics 和 profiler 服务, debug 和监控
-			profileServer := exthttp.NewMuxServer(logger, exthttp.WithListen(":6060"), exthttp.WithServiceName("metrics/profiler"))
-			profileServer.RegisterProfiler()
-			profileServer.RegisterMetrics(reg)
-			profileServer.RegisterProber(httpProber)
-			profileServer.RunGroup(g)
+			// 启动内部 http 服务, 健康检查路由, 监控指标路由, pprof
+			extapp.StartInnerHttpServer(extApp, httpProber)
 
 			statusProber.Ready()
 			extapp.FatalOnErrorf(g.Run(), "start error")

@@ -54,6 +54,9 @@ func RunDefaultServerApp(app *cobra.Command) {
 	// 注册 shedder flag
 	shedder.Register(app.PersistentFlags())
 
+	// 注册 inner app server
+	RegisterInnerHttpServerFlags(app.PersistentFlags())
+
 	FatalOnError(app.Execute())
 }
 
