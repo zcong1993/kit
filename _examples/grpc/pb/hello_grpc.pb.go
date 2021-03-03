@@ -20,6 +20,9 @@ const _ = grpc.SupportPackageIsVersion7
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type HelloClient interface {
 	Get(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (*HelloResponse, error)
+	ServerStream(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (Hello_ServerStreamClient, error)
+	ClientStream(ctx context.Context, opts ...grpc.CallOption) (Hello_ClientStreamClient, error)
+	DuplexStream(ctx context.Context, opts ...grpc.CallOption) (Hello_DuplexStreamClient, error)
 }
 
 type helloClient struct {
@@ -39,11 +42,111 @@ func (c *helloClient) Get(ctx context.Context, in *HelloRequest, opts ...grpc.Ca
 	return out, nil
 }
 
+func (c *helloClient) ServerStream(ctx context.Context, in *HelloRequest, opts ...grpc.CallOption) (Hello_ServerStreamClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Hello_ServiceDesc.Streams[0], "/pb.Hello/ServerStream", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &helloServerStreamClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Hello_ServerStreamClient interface {
+	Recv() (*HelloResponse, error)
+	grpc.ClientStream
+}
+
+type helloServerStreamClient struct {
+	grpc.ClientStream
+}
+
+func (x *helloServerStreamClient) Recv() (*HelloResponse, error) {
+	m := new(HelloResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *helloClient) ClientStream(ctx context.Context, opts ...grpc.CallOption) (Hello_ClientStreamClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Hello_ServiceDesc.Streams[1], "/pb.Hello/ClientStream", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &helloClientStreamClient{stream}
+	return x, nil
+}
+
+type Hello_ClientStreamClient interface {
+	Send(*HelloRequest) error
+	CloseAndRecv() (*HelloResponse, error)
+	grpc.ClientStream
+}
+
+type helloClientStreamClient struct {
+	grpc.ClientStream
+}
+
+func (x *helloClientStreamClient) Send(m *HelloRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *helloClientStreamClient) CloseAndRecv() (*HelloResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(HelloResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *helloClient) DuplexStream(ctx context.Context, opts ...grpc.CallOption) (Hello_DuplexStreamClient, error) {
+	stream, err := c.cc.NewStream(ctx, &Hello_ServiceDesc.Streams[2], "/pb.Hello/DuplexStream", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &helloDuplexStreamClient{stream}
+	return x, nil
+}
+
+type Hello_DuplexStreamClient interface {
+	Send(*HelloRequest) error
+	Recv() (*HelloResponse, error)
+	grpc.ClientStream
+}
+
+type helloDuplexStreamClient struct {
+	grpc.ClientStream
+}
+
+func (x *helloDuplexStreamClient) Send(m *HelloRequest) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *helloDuplexStreamClient) Recv() (*HelloResponse, error) {
+	m := new(HelloResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // HelloServer is the server API for Hello service.
 // All implementations must embed UnimplementedHelloServer
 // for forward compatibility
 type HelloServer interface {
 	Get(context.Context, *HelloRequest) (*HelloResponse, error)
+	ServerStream(*HelloRequest, Hello_ServerStreamServer) error
+	ClientStream(Hello_ClientStreamServer) error
+	DuplexStream(Hello_DuplexStreamServer) error
 	mustEmbedUnimplementedHelloServer()
 }
 
@@ -53,6 +156,15 @@ type UnimplementedHelloServer struct {
 
 func (UnimplementedHelloServer) Get(context.Context, *HelloRequest) (*HelloResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Get not implemented")
+}
+func (UnimplementedHelloServer) ServerStream(*HelloRequest, Hello_ServerStreamServer) error {
+	return status.Errorf(codes.Unimplemented, "method ServerStream not implemented")
+}
+func (UnimplementedHelloServer) ClientStream(Hello_ClientStreamServer) error {
+	return status.Errorf(codes.Unimplemented, "method ClientStream not implemented")
+}
+func (UnimplementedHelloServer) DuplexStream(Hello_DuplexStreamServer) error {
+	return status.Errorf(codes.Unimplemented, "method DuplexStream not implemented")
 }
 func (UnimplementedHelloServer) mustEmbedUnimplementedHelloServer() {}
 
@@ -85,6 +197,79 @@ func _Hello_Get_Handler(srv interface{}, ctx context.Context, dec func(interface
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Hello_ServerStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(HelloRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(HelloServer).ServerStream(m, &helloServerStreamServer{stream})
+}
+
+type Hello_ServerStreamServer interface {
+	Send(*HelloResponse) error
+	grpc.ServerStream
+}
+
+type helloServerStreamServer struct {
+	grpc.ServerStream
+}
+
+func (x *helloServerStreamServer) Send(m *HelloResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _Hello_ClientStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(HelloServer).ClientStream(&helloClientStreamServer{stream})
+}
+
+type Hello_ClientStreamServer interface {
+	SendAndClose(*HelloResponse) error
+	Recv() (*HelloRequest, error)
+	grpc.ServerStream
+}
+
+type helloClientStreamServer struct {
+	grpc.ServerStream
+}
+
+func (x *helloClientStreamServer) SendAndClose(m *HelloResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *helloClientStreamServer) Recv() (*HelloRequest, error) {
+	m := new(HelloRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func _Hello_DuplexStream_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(HelloServer).DuplexStream(&helloDuplexStreamServer{stream})
+}
+
+type Hello_DuplexStreamServer interface {
+	Send(*HelloResponse) error
+	Recv() (*HelloRequest, error)
+	grpc.ServerStream
+}
+
+type helloDuplexStreamServer struct {
+	grpc.ServerStream
+}
+
+func (x *helloDuplexStreamServer) Send(m *HelloResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *helloDuplexStreamServer) Recv() (*HelloRequest, error) {
+	m := new(HelloRequest)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 // Hello_ServiceDesc is the grpc.ServiceDesc for Hello service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -97,6 +282,23 @@ var Hello_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Hello_Get_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
-	Metadata: "_examples/grpcserver/pb/hello.proto",
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "ServerStream",
+			Handler:       _Hello_ServerStream_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "ClientStream",
+			Handler:       _Hello_ClientStream_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "DuplexStream",
+			Handler:       _Hello_DuplexStream_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+	},
+	Metadata: "_examples/grpc/pb/hello.proto",
 }

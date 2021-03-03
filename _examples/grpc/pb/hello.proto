@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package pb;
 
-option go_package = "_examples/grpcserver/pb";
+option go_package = "_examples/grpc/pb";
 
 message HelloRequest {
     string name = 1;
@@ -15,4 +15,7 @@ message HelloResponse {
 
 service Hello {
     rpc Get(HelloRequest) returns (HelloResponse);
+    rpc ServerStream(HelloRequest) returns (stream HelloResponse);
+    rpc ClientStream(stream HelloRequest) returns (HelloResponse);
+    rpc DuplexStream(stream HelloRequest) returns (stream HelloResponse);
 }

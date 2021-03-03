@@ -8,4 +8,4 @@ rm -rf $OUT_DIR/*.{go,json}
 protoc --go-grpc_out=. \
     --go_out=. \
     -I=. \
-    ./_examples/grpcserver/pb/*.proto
+    ./_examples/grpc/pb/*.proto

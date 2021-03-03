@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"log"
 	"time"
 
@@ -28,6 +29,52 @@ type middleService struct {
 
 func (h *middleService) Get(ctx context.Context, in *pb.HelloRequest) (*pb.HelloResponse, error) {
 	return h.client.Get(ctx, in)
+}
+
+func (h *middleService) ServerStream(req *pb.HelloRequest, stream pb.Hello_ServerStreamServer) error {
+	s, err := h.client.ServerStream(context.Background(), req)
+	if err != nil {
+		return err
+	}
+
+	for {
+		r, err := s.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		err = stream.Send(r)
+		if err != nil {
+			return err
+		}
+	}
+}
+
+func (h *middleService) ClientStream(stream pb.Hello_ClientStreamServer) error {
+	s, err := h.client.ClientStream(stream.Context())
+	if err != nil {
+		return err
+	}
+
+	for {
+		req, err := stream.Recv()
+		if err != io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		err = s.Send(req)
+		if err != nil {
+			return err
+		}
+	}
+
+	resp, err := s.CloseAndRecv()
+	if err != nil {
+		return err
+	}
+	return stream.SendAndClose(resp)
 }
 
 var middleCmd = &cobra.Command{

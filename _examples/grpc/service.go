@@ -2,7 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"io"
 	"time"
+
+	"google.golang.org/grpc/metadata"
 
 	"github.com/zcong1993/x/pkg/extapp"
 
@@ -26,6 +30,10 @@ type helloService struct {
 	pb.UnimplementedHelloServer
 }
 
+func req2res(req *pb.HelloRequest) *pb.HelloResponse {
+	return &pb.HelloResponse{Value: fmt.Sprintf("resp-%s-%d", req.Name, req.Sleep)}
+}
+
 func (h *helloService) Get(ctx context.Context, in *pb.HelloRequest) (*pb.HelloResponse, error) {
 	if in.Sleep > 5 {
 		return nil, status.Error(codes.ResourceExhausted, "test")
@@ -42,6 +50,67 @@ func (h *helloService) Get(ctx context.Context, in *pb.HelloRequest) (*pb.HelloR
 	}
 
 	return &pb.HelloResponse{Value: "hello " + in.Name}, nil
+}
+
+func (h *helloService) ServerStream(req *pb.HelloRequest, stream pb.Hello_ServerStreamServer) error {
+	md, ok := metadata.FromIncomingContext(stream.Context())
+	if ok {
+		fmt.Printf("%+v\n", md)
+	}
+
+	res := req2res(req)
+	i := 0
+	for i < 5 {
+		err := stream.Send(res)
+		if err != nil {
+			return err
+		}
+		i++
+		time.Sleep(time.Millisecond * 200)
+	}
+	return nil
+}
+
+func (h *helloService) ClientStream(stream pb.Hello_ClientStreamServer) error {
+	md, ok := metadata.FromIncomingContext(stream.Context())
+	if ok {
+		fmt.Printf("%+v\n", md)
+	}
+
+	var r *pb.HelloRequest
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		r = req
+	}
+
+	time.Sleep(time.Millisecond * 500)
+
+	return stream.SendAndClose(req2res(r))
+}
+
+func (h *helloService) DuplexStream(stream pb.Hello_DuplexStreamServer) error {
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		err = stream.Send(req2res(req))
+		if err != nil {
+			return err
+		}
+		time.Sleep(time.Millisecond * 200)
+	}
+
+	return nil
 }
 
 var serviceCmd = &cobra.Command{
