@@ -18,18 +18,25 @@ import (
 )
 
 type App struct {
-	Logger log.Logger
-	Reg    *prometheus.Registry
-	Tracer opentracing.Tracer
-	Cmd    *cobra.Command
-	G      *run.Group
+	App      string
+	Logger   log.Logger
+	Reg      prometheus.Registerer
+	Registry *prometheus.Registry
+	Tracer   opentracing.Tracer
+	Cmd      *cobra.Command
+	G        *run.Group
 }
 
 func NewFromCmd(cmd *cobra.Command) *App {
+	name, err := cmd.Flags().GetString("app")
+	FatalOnError(err)
+
 	// 初始化日志
 	logger := log2.MustNewLogger(cmd)
+	logger = log.WithPrefix(logger, "app", name)
 
 	me := metrics.InitMetrics()
+	reg := prometheus.WrapRegistererWith(prometheus.Labels{"app": name}, me)
 
 	var g run.Group
 
@@ -37,15 +44,20 @@ func NewFromCmd(cmd *cobra.Command) *App {
 	tracer := register.MustInitTracer(&g, cmd, logger, me)
 
 	return &App{
-		Logger: logger,
-		Reg:    me,
-		Tracer: tracer,
-		Cmd:    cmd,
-		G:      &g,
+		App:      name,
+		Logger:   logger,
+		Reg:      reg,
+		Registry: me,
+		Tracer:   tracer,
+		Cmd:      cmd,
+		G:        &g,
 	}
 }
 
 func RunDefaultServerApp(app *cobra.Command) {
+	// 注册 app name flag
+	app.PersistentFlags().String("app", "", "App name")
+	cobra.MarkFlagRequired(app.PersistentFlags(), "app")
 	// 注册日志相关 flag
 	log2.Register(app.PersistentFlags())
 	// 注册 tracing flag

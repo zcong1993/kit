@@ -47,7 +47,7 @@ func StartInnerHttpServer(app *App, httpProber *prober.HTTPProbe, opts ...exthtt
 	}
 
 	if withMetricsVar {
-		profileServer.RegisterMetrics(app.Reg)
+		profileServer.RegisterMetrics(app.Registry)
 	}
 
 	profileServer.RegisterProber(httpProber)

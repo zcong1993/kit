@@ -35,7 +35,7 @@ var service2Cmd = &cobra.Command{
 
 		// 服务健康状态
 		httpProber := prober.NewHTTP()
-		statusProber := prober.Combine(httpProber, prober.NewInstrumentation("gin", logger))
+		statusProber := prober.Combine(httpProber, prober.NewInstrumentation("gin", logger, reg))
 
 		// 监听退出信号
 		extrun.HandleSignal(g)
@@ -65,7 +65,7 @@ var service2Cmd = &cobra.Command{
 		// metrics 和 profiler 服务, debug 和监控
 		profileServer := exthttp.NewMuxServer(logger, exthttp.WithListen(":6060"), exthttp.WithServiceName("metrics/profiler"))
 		profileServer.RegisterProfiler()
-		profileServer.RegisterMetrics(reg)
+		profileServer.RegisterMetrics(extApp.Registry)
 		profileServer.RegisterProber(httpProber)
 		profileServer.RunGroup(g)
 

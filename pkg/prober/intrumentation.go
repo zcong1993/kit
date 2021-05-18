@@ -24,7 +24,7 @@ type InstrumentationProbe struct {
 }
 
 // NewInstrumentation returns InstrumentationProbe records readiness and healthiness for given component.
-func NewInstrumentation(component string, logger log.Logger) *InstrumentationProbe {
+func NewInstrumentation(component string, logger log.Logger, reg prometheus.Registerer) *InstrumentationProbe {
 	p := InstrumentationProbe{
 		component: component,
 		logger:    logger,
@@ -36,7 +36,7 @@ func NewInstrumentation(component string, logger log.Logger) *InstrumentationPro
 			[]string{"check"},
 		),
 	}
-	prometheus.MustRegister(p.status)
+	reg.MustRegister(p.status)
 	return &p
 }
 

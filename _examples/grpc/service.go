@@ -130,7 +130,7 @@ var serviceCmd = &cobra.Command{
 		// 服务健康状态
 		grpcProber := prober.NewGRPC()
 		httpProber := prober.NewHTTP()
-		statusProber := prober.Combine(httpProber, grpcProber, prober.NewInstrumentation("grpc", logger))
+		statusProber := prober.Combine(httpProber, grpcProber, prober.NewInstrumentation("grpc", logger, reg))
 
 		// 监听退出信号
 		extrun.HandleSignal(g)
@@ -168,7 +168,7 @@ var serviceCmd = &cobra.Command{
 		// metrics 和 profiler 服务, debug 和监控
 		profileServer := exthttp.NewMuxServer(logger, exthttp.WithListen(metricsAddr), exthttp.WithServiceName("metrics/profiler"))
 		profileServer.RegisterProfiler()
-		profileServer.RegisterMetrics(reg)
+		profileServer.RegisterMetrics(extApp.Registry)
 		profileServer.RegisterProber(httpProber)
 		profileServer.RunGroup(g)
 

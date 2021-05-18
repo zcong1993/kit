@@ -43,7 +43,7 @@ func main() {
 
 			// 服务健康状态
 			httpProber := prober.NewHTTP()
-			statusProber := prober.Combine(httpProber, prober.NewInstrumentation("gin", logger))
+			statusProber := prober.Combine(httpProber, prober.NewInstrumentation("gin", logger, reg))
 
 			// 监听退出信号
 			extrun.HandleSignal(g)
