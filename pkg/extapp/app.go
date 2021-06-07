@@ -57,7 +57,7 @@ func NewFromCmd(cmd *cobra.Command) *App {
 func RunDefaultServerApp(app *cobra.Command) {
 	// 注册 app name flag
 	app.PersistentFlags().String("app", "", "App name")
-	cobra.MarkFlagRequired(app.PersistentFlags(), "app")
+	_ = cobra.MarkFlagRequired(app.PersistentFlags(), "app")
 	// 注册日志相关 flag
 	log2.Register(app.PersistentFlags())
 	// 注册 tracing flag
