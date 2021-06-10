@@ -4,6 +4,8 @@ import (
 	"crypto/tls"
 	"time"
 
+	oteltracing "github.com/zcong1993/x/pkg/tracing/otel"
+
 	"github.com/opentracing/opentracing-go"
 	"github.com/zcong1993/x/pkg/tracing"
 
@@ -91,6 +93,13 @@ func WithServerTracing(tracer opentracing.Tracer) Option {
 	return CombineOptions(
 		WithUnaryServerInterceptor(tracing.UnaryServerInterceptor(tracer)),
 		WithStreamServerInterceptor(tracing.StreamServerInterceptor(tracer)),
+	)
+}
+
+func WithOtelTracing() Option {
+	return CombineOptions(
+		WithUnaryServerInterceptor(oteltracing.UnaryServerInterceptor()),
+		WithStreamServerInterceptor(oteltracing.StreamServerInterceptor()),
 	)
 }
 

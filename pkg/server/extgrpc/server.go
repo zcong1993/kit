@@ -4,8 +4,6 @@ import (
 	"context"
 	"net"
 
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/pkg/errors"
@@ -40,11 +38,11 @@ func NewServer(logger log.Logger, probe *prober.GRPCProbe, opts ...Option) *Serv
 	}
 
 	if len(options.grpcUnaryServerInterceptors) > 0 {
-		options.grpcOpts = append(options.grpcOpts, grpc_middleware.WithUnaryServerChain(options.grpcUnaryServerInterceptors...))
+		options.grpcOpts = append(options.grpcOpts, grpc.ChainUnaryInterceptor(options.grpcUnaryServerInterceptors...))
 	}
 
 	if len(options.grpcStreamServerInterceptors) > 0 {
-		options.grpcOpts = append(options.grpcOpts, grpc_middleware.WithStreamServerChain(options.grpcStreamServerInterceptors...))
+		options.grpcOpts = append(options.grpcOpts, grpc.ChainStreamInterceptor(options.grpcStreamServerInterceptors...))
 	}
 
 	s := grpc.NewServer(options.grpcOpts...)
