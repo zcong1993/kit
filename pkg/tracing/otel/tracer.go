@@ -1,6 +1,7 @@
 package oteltracing
 
 import (
+	"context"
 	"os"
 	"strconv"
 
@@ -12,6 +13,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	"go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/semconv"
+	otelTrace "go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -92,4 +94,22 @@ func InitTracerFromEnv(serviceName string, attrs ...attribute.KeyValue) error {
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
 
 	return nil
+}
+
+// DoInSpan executes function doFn inside new span with `operationName` name and hooking as child to a span found within given context if any.
+// It uses opentracing.Tracer propagated in context. If no found, it uses noop tracer notification.
+func DoInSpan(ctx context.Context, operationName string, doFn func(context.Context), opts ...otelTrace.SpanOption) {
+	tracer := otel.Tracer("DoInSpan")
+	newCtx, span := tracer.Start(ctx, operationName, opts...)
+	defer span.End()
+	doFn(newCtx)
+}
+
+// DoWithSpan executes function doFn inside new span with `operationName` name and hooking as child to a span found within given context if any.
+// It uses opentracing.Tracer propagated in context. If no found, it uses noop tracer notification.
+func DoWithSpan(ctx context.Context, operationName string, doFn func(context.Context, otelTrace.Span), opts ...otelTrace.SpanOption) {
+	tracer := otel.Tracer("DoWithSpan")
+	newCtx, span := tracer.Start(ctx, operationName, opts...)
+	defer span.End()
+	doFn(newCtx, span)
 }

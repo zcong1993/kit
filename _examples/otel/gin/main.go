@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -111,8 +110,7 @@ func addRouters(r *gin.Engine) {
 			return
 		}
 		defer resp.Body.Close()
-		io.Copy(ioutil.Discard, resp.Body)
-		c.String(200, "hello %s", c.Param("id"))
+		io.Copy(c.Writer, resp.Body)
 	})
 
 	r.GET("/test", ginhelper.ErrorWrapper(func(c *gin.Context) error {

@@ -26,6 +26,7 @@ require (
 	go.opentelemetry.io/otel v0.20.0 // indirect
 	go.opentelemetry.io/otel/exporters/trace/jaeger v0.20.0 // indirect
 	go.opentelemetry.io/otel/sdk v0.20.0 // indirect
+	go.opentelemetry.io/otel/trace v0.20.0 // indirect
 	go.uber.org/atomic v1.7.0
 	google.golang.org/grpc v1.37.0
 	google.golang.org/protobuf v1.26.0
