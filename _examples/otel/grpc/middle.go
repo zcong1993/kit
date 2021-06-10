@@ -131,14 +131,7 @@ var middleCmd = &cobra.Command{
 			breaker.WithGrpcServerBreaker(logger),
 		)
 
-		g.Add(func() error {
-			statusProber.Healthy()
-			return grpcServer.ListenAndServe()
-		}, func(err error) {
-			statusProber.NotReady(err)
-			grpcServer.Shutdown(err)
-			statusProber.NotHealthy(err)
-		})
+		grpcServer.Run(g, statusProber)
 
 		metricsAddr := mustGet(func() (interface{}, error) {
 			return cmd.Flags().GetString("metrics-addr")

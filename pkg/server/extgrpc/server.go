@@ -4,6 +4,8 @@ import (
 	"context"
 	"net"
 
+	"github.com/oklog/run"
+
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/pkg/errors"
@@ -106,4 +108,15 @@ func (s *Server) Shutdown(err error) {
 		cancel()
 	}
 	level.Info(s.logger).Log("msg", "internal server is shutdown gracefully", "err", err)
+}
+
+func (s *Server) Run(g *run.Group, statusProber prober.Probe) {
+	g.Add(func() error {
+		statusProber.Healthy()
+		return s.ListenAndServe()
+	}, func(err error) {
+		statusProber.NotReady(err)
+		s.Shutdown(err)
+		statusProber.NotHealthy(err)
+	})
 }

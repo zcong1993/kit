@@ -55,15 +55,7 @@ var (
 			addRouters(r)
 
 			httpServer := exthttp.NewHttpServer(r, logger, exthttp.WithGracePeriod(time.Second*5), exthttp.WithListen(":8081"))
-
-			g.Add(func() error {
-				statusProber.Healthy()
-				return httpServer.Start()
-			}, func(err error) {
-				statusProber.NotReady(err)
-				httpServer.Shutdown(err)
-				statusProber.NotHealthy(err)
-			})
+			httpServer.Run(g, statusProber)
 
 			// metrics 和 profiler 服务, debug 和监控
 			profileServer := exthttp.NewMuxServer(logger, exthttp.WithListen(":6061"), exthttp.WithServiceName("metrics/profiler"))

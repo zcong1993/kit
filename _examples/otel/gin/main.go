@@ -66,15 +66,7 @@ func main() {
 			addRouters(r)
 
 			httpServer := exthttp.NewHttpServer(r, logger, exthttp.WithGracePeriod(time.Second*5), exthttp.WithListen(":8080"))
-
-			g.Add(func() error {
-				statusProber.Healthy()
-				return httpServer.Start()
-			}, func(err error) {
-				statusProber.NotReady(err)
-				httpServer.Shutdown(err)
-				statusProber.NotHealthy(err)
-			})
+			httpServer.Run(g, statusProber)
 
 			// 启动内部 http 服务, 健康检查路由, 监控指标路由, pprof
 			mux := extapp.StartInnerHttpServer(extApp, httpProber)

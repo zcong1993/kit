@@ -81,15 +81,7 @@ var gatewayCmd = &cobra.Command{
 		}).(string)
 
 		httpServer := exthttp.NewHttpServer(r, logger, exthttp.WithGracePeriod(time.Second*5), exthttp.WithListen(addr))
-
-		g.Add(func() error {
-			statusProber.Healthy()
-			return httpServer.Start()
-		}, func(err error) {
-			statusProber.NotReady(err)
-			httpServer.Shutdown(err)
-			statusProber.NotHealthy(err)
-		})
+		httpServer.Run(g, statusProber)
 
 		metricsAddr := mustGet(func() (interface{}, error) {
 			return cmd.Flags().GetString("metrics-addr")

@@ -52,15 +52,7 @@ var service2Cmd = &cobra.Command{
 		addRoutersV2(r, httpClient(klog.With(logger, "component", "httpClient")))
 
 		httpServer := exthttp.NewHttpServer(r, logger, exthttp.WithGracePeriod(time.Second*5), exthttp.WithListen(":8080"))
-
-		g.Add(func() error {
-			statusProber.Healthy()
-			return httpServer.Start()
-		}, func(err error) {
-			statusProber.NotReady(err)
-			httpServer.Shutdown(err)
-			statusProber.NotHealthy(err)
-		})
+		httpServer.Run(g, statusProber)
 
 		// metrics 和 profiler 服务, debug 和监控
 		profileServer := exthttp.NewMuxServer(logger, exthttp.WithListen(":6060"), exthttp.WithServiceName("metrics/profiler"))

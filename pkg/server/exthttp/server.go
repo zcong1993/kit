@@ -5,6 +5,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/oklog/run"
+	"github.com/zcong1993/x/pkg/prober"
+
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 )
@@ -83,4 +86,15 @@ func (hs *HttpServer) Shutdown(err error) {
 		return
 	}
 	level.Info(hs.logger).Log("msg", "internal server is shutdown gracefully", "err", err)
+}
+
+func (hs *HttpServer) Run(g *run.Group, statusProber prober.Probe) {
+	g.Add(func() error {
+		statusProber.Healthy()
+		return hs.Start()
+	}, func(err error) {
+		statusProber.NotReady(err)
+		hs.Shutdown(err)
+		statusProber.NotHealthy(err)
+	})
 }
