@@ -1,7 +1,6 @@
 package log
 
 import (
-	"fmt"
 	"os"
 	"time"
 
@@ -13,6 +12,8 @@ import (
 	klog "github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 )
+
+type LoggerFactory = func() (klog.Logger, error)
 
 // This timestamp format differs from RFC3339Nano by using .000 instead
 // of .999999999 which changes the timestamp from 9 variable to 3 fixed
@@ -35,30 +36,26 @@ func Register(flagSet *pflag.FlagSet) {
 	flagSet.Bool("log.caller", false, "If with caller field")
 }
 
-func NewLogger(cmd *cobra.Command) (klog.Logger, error) {
-	format, err := cmd.Flags().GetString("log.format")
-	if err != nil {
-		return nil, err
-	}
+type Option struct {
+	LogLevel  string
+	LogFormat string
+	Caller    bool
+}
 
-	if !contains(format, []string{"logfmt", "json"}) {
+func NewLogger(opt *Option) (klog.Logger, error) {
+	if !contains(opt.LogFormat, []string{"logfmt", "json"}) {
 		return nil, errors.New("invalid log format")
 	}
 
 	var l klog.Logger
-	if format == "json" {
+	if opt.LogFormat == "json" {
 		l = klog.NewJSONLogger(klog.NewSyncWriter(os.Stderr))
 	} else {
 		l = klog.NewLogfmtLogger(klog.NewSyncWriter(os.Stderr))
 	}
 
-	lvStr, err := cmd.Flags().GetString("log.level")
-	if err != nil {
-		return nil, err
-	}
-
 	var lv level.Option
-	switch lvStr {
+	switch opt.LogLevel {
 	case "debug":
 		lv = level.AllowDebug()
 	case "info":
@@ -71,27 +68,28 @@ func NewLogger(cmd *cobra.Command) (klog.Logger, error) {
 		return nil, errors.New("invalid log level")
 	}
 
-	caller, err := cmd.Flags().GetBool("log.caller")
-	if err != nil {
-		return nil, err
-	}
-
 	l = level.NewFilter(l, lv)
 	l = klog.With(l, "ts", timestampFormat)
 
-	if caller {
+	if opt.Caller {
 		l = klog.With(l, "caller", klog.DefaultCaller)
 	}
+
 	return l, nil
 }
 
-func MustNewLogger(cmd *cobra.Command) klog.Logger {
-	logger, err := NewLogger(cmd)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed init logger:  %s\n", err)
-		os.Exit(2)
+func RegistryLogger(app *cobra.Command) LoggerFactory {
+	var opt Option
+
+	f := app.PersistentFlags()
+
+	f.StringVar(&opt.LogLevel, "log.level", "info", "Log level")
+	f.StringVar(&opt.LogFormat, "log.format", "logfmt", "Log format")
+	f.BoolVar(&opt.Caller, "log.caller", false, "If with caller field")
+
+	return func() (klog.Logger, error) {
+		return NewLogger(&opt)
 	}
-	return logger
 }
 
 func contains(val string, enums []string) bool {

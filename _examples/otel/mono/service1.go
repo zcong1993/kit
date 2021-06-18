@@ -9,66 +9,27 @@ import (
 
 	"github.com/zcong1993/x/pkg/extapp"
 
-	"github.com/zcong1993/x/pkg/breaker"
-	"github.com/zcong1993/x/pkg/shedder"
-
-	"github.com/zcong1993/x/pkg/metrics"
-
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
-	"github.com/zcong1993/x/pkg/extrun"
-	"github.com/zcong1993/x/pkg/ginhelper"
-	"github.com/zcong1993/x/pkg/prober"
 	"github.com/zcong1993/x/pkg/server/exthttp"
 )
 
-var (
-	service1Cmd = &cobra.Command{
+func service1Cmd(app *extapp.App) *cobra.Command {
+	return &cobra.Command{
 		Use:   "service1",
 		Short: "sub command for service1",
 		Run: func(cmd *cobra.Command, args []string) {
-			extApp := extapp.NewFromCmd(cmd)
-
-			logger := extApp.Logger
-			reg := extApp.Reg
-			g := extApp.G
-			serviceName := extApp.App
-
-			extapp.FatalOnErrorf(oteltracing.InitTracerFromEnv(serviceName), "init tracer error")
-
-			// 服务健康状态
-			httpProber := prober.NewHTTP()
-			statusProber := prober.Combine(httpProber, prober.NewInstrumentation("gin", logger, reg))
-
-			// 监听退出信号
-			extrun.HandleSignal(g)
+			app.InitFromCmd(cmd, "service1")
 
 			// 真正的业务 http server
 			// 初始化 gin
-			r := ginhelper.DefaultWithLogger(logger)
-			r.Use(metrics.NewInstrumentationMiddleware(reg))
-			r.Use(oteltracing.GinMiddleware(serviceName))
-			// shedder 中间件
-			r.Use(shedder.GinShedderMiddleware(shedder.NewShedderFromCmd(cmd), logger))
-			// breaker 中间件
-			r.Use(breaker.GinBreakerMiddleware(logger))
+			r := app.GinServer(exthttp.WithGracePeriod(time.Second*5), exthttp.WithListen(":8081"))
 			addRouters(r)
 
-			httpServer := exthttp.NewHttpServer(r, logger, exthttp.WithGracePeriod(time.Second*5), exthttp.WithListen(":8081"))
-			httpServer.Run(g, statusProber)
-
-			// metrics 和 profiler 服务, debug 和监控
-			profileServer := exthttp.NewMuxServer(logger, exthttp.WithListen(":6061"), exthttp.WithServiceName("metrics/profiler"))
-			profileServer.RegisterProfiler()
-			profileServer.RegisterMetrics(extApp.Registry)
-			profileServer.RegisterProber(httpProber)
-			profileServer.RunGroup(g)
-
-			statusProber.Ready()
-			extapp.FatalOnErrorf(g.Run(), "start error")
+			extapp.FatalOnErrorf(app.Start(), "start error")
 		},
 	}
-)
+}
 
 func addRouters(r *gin.Engine) {
 	r.GET("/", func(c *gin.Context) {

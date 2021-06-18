@@ -4,103 +4,59 @@ import (
 	"log"
 	"time"
 
-	oteltracing "github.com/zcong1993/x/pkg/tracing/otel"
-
 	"github.com/zcong1993/x/pkg/extapp"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
 	"github.com/zcong1993/x/_examples/grpc/pb"
-	"github.com/zcong1993/x/pkg/breaker"
 	"github.com/zcong1993/x/pkg/extgrpcc"
-	"github.com/zcong1993/x/pkg/extrun"
 	"github.com/zcong1993/x/pkg/ginhelper"
-	"github.com/zcong1993/x/pkg/metrics"
-	"github.com/zcong1993/x/pkg/prober"
 	"github.com/zcong1993/x/pkg/server/exthttp"
-	"github.com/zcong1993/x/pkg/shedder"
 	"google.golang.org/grpc"
 )
 
-var gatewayCmd = &cobra.Command{
-	Use:   "gateway",
-	Short: "sub command for gateway",
-	Run: func(cmd *cobra.Command, args []string) {
-		extApp := extapp.NewFromCmd(cmd)
+func gatewayCmd(app *extapp.App) *cobra.Command {
+	var (
+		serverAddr     string
+		grpcServerAddr string
+	)
 
-		logger := extApp.Logger
-		reg := extApp.Reg
-		g := extApp.G
-		serviceName := extApp.App
+	cmd := &cobra.Command{
+		Use:   "gateway",
+		Short: "sub command for gateway",
+		Run: func(cmd *cobra.Command, args []string) {
+			app.InitFromCmd(cmd, "gateway")
 
-		extapp.FatalOnErrorf(oteltracing.InitTracerFromEnv(serviceName), "init tracer error")
+			// 真正的业务 http server
+			// 初始化 gin
+			r := app.GinServer(exthttp.WithGracePeriod(time.Second*5), exthttp.WithListen(serverAddr))
 
-		// 服务健康状态
-		httpProber := prober.NewHTTP()
-		statusProber := prober.Combine(httpProber, prober.NewInstrumentation("gin", logger, reg))
+			conn, err := grpc.Dial(grpcServerAddr, extgrpcc.ClientOtelGrpcOpts(app.Reg, false)...)
+			grpcClient := pb.NewHelloClient(conn)
 
-		// 监听退出信号
-		extrun.HandleSignal(g)
-
-		// 真正的业务 http server
-		// 初始化 gin
-		r := ginhelper.DefaultWithLogger(logger)
-		r.Use(metrics.NewInstrumentationMiddleware(reg))
-		r.Use(oteltracing.GinMiddleware(serviceName))
-		// shedder 中间件
-		r.Use(shedder.GinShedderMiddleware(shedder.NewShedderFromCmd(cmd), logger))
-		// breaker 中间件
-		r.Use(breaker.GinBreakerMiddleware(logger))
-
-		upstreamAddr := mustGet(func() (interface{}, error) {
-			return cmd.Flags().GetString("grpc-server-addr")
-		}).(string)
-
-		conn, err := grpc.Dial(upstreamAddr, extgrpcc.ClientOtelGrpcOpts(reg, false)...)
-		grpcClient := pb.NewHelloClient(conn)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		r.POST("/hello", ginhelper.ErrorWrapper(func(c *gin.Context) error {
-			var getRequest pb.HelloRequest
-			if err := c.BindJSON(&getRequest); err != nil {
-				return err
-			}
-			resp, err := grpcClient.Get(c.Request.Context(), &getRequest)
 			if err != nil {
-				return err
+				log.Fatal(err)
 			}
-			c.JSON(200, resp)
-			return nil
-		}))
 
-		addr := mustGet(func() (interface{}, error) {
-			return cmd.Flags().GetString("server-addr")
-		}).(string)
+			r.POST("/hello", ginhelper.ErrorWrapper(func(c *gin.Context) error {
+				var getRequest pb.HelloRequest
+				if err := c.BindJSON(&getRequest); err != nil {
+					return err
+				}
+				resp, err := grpcClient.Get(c.Request.Context(), &getRequest)
+				if err != nil {
+					return err
+				}
+				c.JSON(200, resp)
+				return nil
+			}))
 
-		httpServer := exthttp.NewHttpServer(r, logger, exthttp.WithGracePeriod(time.Second*5), exthttp.WithListen(addr))
-		httpServer.Run(g, statusProber)
+			extapp.FatalOnErrorf(app.Start(), "start error")
+		},
+	}
 
-		metricsAddr := mustGet(func() (interface{}, error) {
-			return cmd.Flags().GetString("metrics-addr")
-		}).(string)
+	cmd.Flags().StringVar(&serverAddr, "server-addr", ":8080", "grpc server addr")
+	cmd.Flags().StringVar(&grpcServerAddr, "grpc-server-addr", "localhost:8081", "upstream grpc server addr")
 
-		// metrics 和 profiler 服务, debug 和监控
-		profileServer := exthttp.NewMuxServer(logger, exthttp.WithListen(metricsAddr), exthttp.WithServiceName("metrics/profiler"))
-		profileServer.RegisterProfiler()
-		profileServer.RegisterMetrics(extApp.Registry)
-		profileServer.RegisterProber(httpProber)
-		profileServer.RunGroup(g)
-
-		statusProber.Ready()
-		extapp.FatalOnErrorf(g.Run(), "start error")
-	},
-}
-
-func init() {
-	gatewayCmd.Flags().String("server-addr", ":8080", "grpc server addr")
-	gatewayCmd.Flags().String("metrics-addr", ":6060", "metrics server addr")
-	gatewayCmd.Flags().String("grpc-server-addr", "localhost:8081", "upstream grpc server addr")
+	return cmd
 }

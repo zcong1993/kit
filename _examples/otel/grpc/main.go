@@ -5,13 +5,15 @@ import (
 	"github.com/zcong1993/x/pkg/extapp"
 )
 
-var app = &cobra.Command{
+var cmd = &cobra.Command{
 	Use:   "grpc",
 	Short: "Grpc mono repo example",
 }
 
 func main() {
-	app.AddCommand(serviceCmd, gatewayCmd, middleCmd)
+	app := extapp.NewApp()
 
-	extapp.RunDefaultServerApp(app)
+	cmd.AddCommand(serviceCmd(app), gatewayCmd(app), middleCmd(app))
+
+	app.RunDefaultServerApp(cmd)
 }

@@ -1,8 +1,0 @@
-type: JAEGER
-config:
-  service_name: "gin-service-2"
-  disabled: false
-  rpc_metrics: false
-  tags: ""
-  sampler_type: "const"
-  sampler_param: 1

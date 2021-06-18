@@ -1,9 +1,10 @@
 package extapp
 
 import (
+	"time"
+
 	"github.com/go-kit/kit/log/level"
-	"github.com/spf13/pflag"
-	"github.com/zcong1993/x/pkg/prober"
+	"github.com/spf13/cobra"
 	"github.com/zcong1993/x/pkg/server/exthttp"
 )
 
@@ -14,45 +15,43 @@ var (
 	withPprof   = "inner.with-pprof"
 	withMetrics = "inner.with-metrics"
 	addr        = "inner.addr"
+	disable     = "inner.disable"
+	gracePeriod = "inner.grace-period"
 )
 
-// RegisterInnerHttpServerFlags 注册相关 flags.
-func RegisterInnerHttpServerFlags(flagSet *pflag.FlagSet) {
-	flagSet.Bool(withPprof, false, "If enable pprof routes.")
-	flagSet.Bool(withMetrics, true, "If expose metrics router.")
-	flagSet.String(addr, ":6060", "Inner http server addr.")
+type innerHttpOptions struct {
+	withPprof   bool
+	withMetrics bool
+	addr        string
+	disable     bool
+	gracePeriod time.Duration
 }
 
-// StartInnerHttpServer 启动服务, 会根据 flags 参数调整功能.
-func StartInnerHttpServer(app *App, httpProber *prober.HTTPProbe, opts ...exthttp.OptionFunc) *exthttp.MuxServer {
-	addrVar, err := app.Cmd.Flags().GetString(addr)
-	FatalOnErrorf(err, "get %s error", addr)
+type innerHttpFactory = func() *exthttp.MuxServer
 
-	withPprofVar, err := app.Cmd.Flags().GetBool(withPprof)
-	FatalOnErrorf(err, "get %s error", withPprof)
+func registerInnerHttp(app *App, cmd *cobra.Command) innerHttpFactory {
+	f := cmd.PersistentFlags()
 
-	withMetricsVar, err := app.Cmd.Flags().GetBool(withMetrics)
-	FatalOnErrorf(err, "get %s error", withMetrics)
+	f.BoolVar(&app.innerHttpOptions.withPprof, withPprof, false, "If enable pprof routes.")
+	f.BoolVar(&app.innerHttpOptions.withMetrics, withMetrics, true, "If expose metrics router.")
+	f.StringVar(&app.innerHttpOptions.addr, addr, ":6060", "Inner http server addr.")
+	f.BoolVar(&app.innerHttpOptions.disable, disable, false, "If disable inner http server.")
+	f.DurationVar(&app.innerHttpOptions.gracePeriod, gracePeriod, 0, "Inner http exit grace period.")
 
-	opts = append([]exthttp.OptionFunc{
-		exthttp.WithListen(addrVar),
-		exthttp.WithServiceName("metrics/profiler"),
-	}, opts...)
+	return func() *exthttp.MuxServer {
+		profileServer := exthttp.NewMuxServer(app.Logger, exthttp.WithListen(app.innerHttpOptions.addr), exthttp.WithServiceName("metrics/profiler"), exthttp.WithGracePeriod(app.innerHttpOptions.gracePeriod))
 
-	profileServer := exthttp.NewMuxServer(app.Logger, opts...)
+		if app.innerHttpOptions.withPprof {
+			level.Info(app.Logger).Log("msg", "register pprof routes")
+			profileServer.RegisterProfiler()
+		}
 
-	if withPprofVar {
-		level.Info(app.Logger).Log("msg", "register pprof routes")
-		profileServer.RegisterProfiler()
+		if app.innerHttpOptions.withMetrics {
+			profileServer.RegisterMetrics(app.Registry)
+		}
+
+		profileServer.RegisterProber(app.HttpProber)
+
+		return profileServer
 	}
-
-	if withMetricsVar {
-		profileServer.RegisterMetrics(app.Registry)
-	}
-
-	profileServer.RegisterProber(httpProber)
-
-	profileServer.RunGroup(app.G)
-
-	return profileServer
 }

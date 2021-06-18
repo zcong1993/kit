@@ -6,26 +6,15 @@ import (
 	"net/http"
 	"time"
 
-	oteltracing "github.com/zcong1993/x/pkg/tracing/otel"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 
 	"github.com/zcong1993/x/pkg/extapp"
 
-	"github.com/zcong1993/x/pkg/shedder"
-
-	"github.com/zcong1993/x/pkg/breaker"
-
-	"github.com/zcong1993/x/pkg/metrics"
-
-	"github.com/zcong1993/x/pkg/prober"
-
 	"github.com/zcong1993/x/pkg/server/exthttp"
 
-	"github.com/spf13/cobra"
-	"github.com/zcong1993/x/pkg/extrun"
-
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/cobra"
 	"github.com/zcong1993/x/pkg/ginhelper"
 )
 
@@ -36,51 +25,28 @@ type Input struct {
 // export OTEL_EXPORTER_TYPE=jaege
 // export OTEL_EXPORTER_JAEGER_ENDPOINT=http://localhost:14268/api/traces
 func main() {
-	app := &cobra.Command{
+	app := extapp.NewApp()
+
+	cmd := &cobra.Command{
 		Run: func(cmd *cobra.Command, args []string) {
-			extApp := extapp.NewFromCmd(cmd)
-
-			logger := extApp.Logger
-			reg := extApp.Reg
-			g := extApp.G
-			app := extApp.App
-
-			extapp.FatalOnErrorf(oteltracing.InitTracerFromEnv(app), "init tracer error")
-
-			// 服务健康状态
-			httpProber := prober.NewHTTP()
-			statusProber := prober.Combine(httpProber, prober.NewInstrumentation(app, logger, reg))
-
-			// 监听退出信号
-			extrun.HandleSignal(g)
+			app.InitFromCmd(cmd, "gin")
 
 			// 真正的业务 http server
-			// 初始化 gin
-			r := ginhelper.DefaultWithLogger(logger)
-			r.Use(metrics.NewInstrumentationMiddleware(reg))
-			r.Use(oteltracing.GinMiddleware(app))
-			// shedder 中间件
-			r.Use(shedder.GinShedderMiddleware(shedder.NewShedderFromCmd(cmd), logger))
-			// breaker 中间件
-			r.Use(breaker.GinBreakerMiddleware(logger))
-			addRouters(r)
-
-			httpServer := exthttp.NewHttpServer(r, logger, exthttp.WithGracePeriod(time.Second*5), exthttp.WithListen(":8080"))
-			httpServer.Run(g, statusProber)
+			ginServer := app.GinServer(exthttp.WithGracePeriod(time.Second*5), exthttp.WithListen(":8080"))
+			addRouters(ginServer)
 
 			// 启动内部 http 服务, 健康检查路由, 监控指标路由, pprof
-			mux := extapp.StartInnerHttpServer(extApp, httpProber)
+			m := app.GetInnerHttpServer()
 			// 可以在增加额外路由
-			mux.HandleFunc("/xxx", func(writer http.ResponseWriter, request *http.Request) {
+			m.HandleFunc("/xxx", func(writer http.ResponseWriter, request *http.Request) {
 				writer.Write([]byte("ok"))
 			})
 
-			statusProber.Ready()
-			extapp.FatalOnErrorf(g.Run(), "start error")
+			extapp.FatalOnErrorf(app.Start(), "start error")
 		},
 	}
 
-	extapp.RunDefaultServerApp(app)
+	app.RunDefaultServerApp(cmd)
 }
 
 func addRouters(r *gin.Engine) {

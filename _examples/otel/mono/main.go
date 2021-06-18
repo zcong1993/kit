@@ -6,13 +6,15 @@ import (
 )
 
 var (
-	app = &cobra.Command{
+	cmd = &cobra.Command{
 		Use:   "mono",
 		Short: "Mono repo example",
 	}
 )
 
 func main() {
-	app.AddCommand(service1Cmd, service2Cmd)
-	extapp.RunDefaultServerApp(app)
+	app := extapp.NewApp()
+
+	cmd.AddCommand(service1Cmd(app), service2Cmd(app))
+	app.RunDefaultServerApp(cmd)
 }

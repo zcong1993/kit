@@ -6,21 +6,13 @@ import (
 	"log"
 	"time"
 
-	oteltracing "github.com/zcong1993/x/pkg/tracing/otel"
-
 	"github.com/zcong1993/x/pkg/extgrpcc"
 
 	"github.com/zcong1993/x/pkg/extapp"
 
 	"github.com/spf13/cobra"
 	"github.com/zcong1993/x/_examples/grpc/pb"
-	"github.com/zcong1993/x/pkg/breaker"
-	"github.com/zcong1993/x/pkg/extrun"
-	"github.com/zcong1993/x/pkg/metrics"
-	"github.com/zcong1993/x/pkg/prober"
 	"github.com/zcong1993/x/pkg/server/extgrpc"
-	"github.com/zcong1993/x/pkg/server/exthttp"
-	"github.com/zcong1993/x/pkg/shedder"
 	"google.golang.org/grpc"
 )
 
@@ -79,78 +71,40 @@ func (h *middleService) ClientStream(stream pb.Hello_ClientStreamServer) error {
 	return stream.SendAndClose(resp)
 }
 
-var middleCmd = &cobra.Command{
-	Use:   "middle",
-	Short: "sub command for middle service",
-	Run: func(cmd *cobra.Command, args []string) {
-		extApp := extapp.NewFromCmd(cmd)
+func middleCmd(app *extapp.App) *cobra.Command {
+	var (
+		serverAddr     string
+		grpcServerAddr string
+	)
 
-		logger := extApp.Logger
-		reg := extApp.Reg
-		g := extApp.G
-		serviceName := extApp.App
+	cmd := &cobra.Command{
+		Use:   "middle",
+		Short: "sub command for middle service",
+		Run: func(cmd *cobra.Command, args []string) {
+			app.InitFromCmd(cmd, "middle")
 
-		extapp.FatalOnErrorf(oteltracing.InitTracerFromEnv(serviceName), "init tracer error")
+			conn, err := grpc.Dial(grpcServerAddr, extgrpcc.ClientOtelGrpcOpts(app.Reg, false)...)
+			grpcClient := pb.NewHelloClient(conn)
 
-		// shedder
-		sd := shedder.NewShedderFromCmd(cmd)
+			if err != nil {
+				log.Fatal(err)
+			}
 
-		// 服务健康状态
-		grpcProber := prober.NewGRPC()
-		httpProber := prober.NewHTTP()
-		statusProber := prober.Combine(httpProber, grpcProber, prober.NewInstrumentation("middle", logger, reg))
+			// 真正的业务 grpc server
+			app.GrpcServer(
+				extgrpc.WithGracePeriod(time.Second*5),
+				extgrpc.WithListen(serverAddr),
+				extgrpc.WithServer(func(s *grpc.Server) {
+					pb.RegisterHelloServer(s, &middleService{client: grpcClient})
+				}),
+			)
 
-		// 监听退出信号
-		extrun.HandleSignal(g)
+			extapp.FatalOnErrorf(app.Start(), "start error")
+		},
+	}
 
-		addr := mustGet(func() (interface{}, error) {
-			return cmd.Flags().GetString("server-addr")
-		}).(string)
+	cmd.Flags().StringVar(&serverAddr, "server-addr", ":8081", "grpc server addr")
+	cmd.Flags().StringVar(&grpcServerAddr, "grpc-server-addr", "localhost:8082", "upstream grpc server addr")
 
-		upstreamAddr := mustGet(func() (interface{}, error) {
-			return cmd.Flags().GetString("grpc-server-addr")
-		}).(string)
-
-		conn, err := grpc.Dial(upstreamAddr, extgrpcc.ClientOtelGrpcOpts(reg, false)...)
-		grpcClient := pb.NewHelloClient(conn)
-
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		// 真正的业务 grpc server
-		grpcServer := extgrpc.NewServer(logger, grpcProber,
-			extgrpc.WithGracePeriod(time.Second*5),
-			extgrpc.WithListen(addr),
-			extgrpc.WithServer(func(s *grpc.Server) {
-				pb.RegisterHelloServer(s, &middleService{client: grpcClient})
-			}),
-			metrics.WithServerMetrics(logger, reg),
-			extgrpc.WithOtelTracing(),
-			shedder.WithGrpcShedder(logger, sd),
-			breaker.WithGrpcServerBreaker(logger),
-		)
-
-		grpcServer.Run(g, statusProber)
-
-		metricsAddr := mustGet(func() (interface{}, error) {
-			return cmd.Flags().GetString("metrics-addr")
-		}).(string)
-
-		// metrics 和 profiler 服务, debug 和监控
-		profileServer := exthttp.NewMuxServer(logger, exthttp.WithListen(metricsAddr), exthttp.WithServiceName("metrics/profiler"))
-		profileServer.RegisterProfiler()
-		profileServer.RegisterMetrics(extApp.Registry)
-		profileServer.RegisterProber(httpProber)
-		profileServer.RunGroup(g)
-
-		statusProber.Ready()
-		extapp.FatalOnErrorf(g.Run(), "start error")
-	},
-}
-
-func init() {
-	middleCmd.Flags().String("server-addr", ":8081", "grpc server addr")
-	middleCmd.Flags().String("metrics-addr", ":6061", "metrics server addr")
-	middleCmd.Flags().String("grpc-server-addr", "localhost:8082", "upstream grpc server addr")
+	return cmd
 }
