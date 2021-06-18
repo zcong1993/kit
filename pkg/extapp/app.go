@@ -12,7 +12,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/zcong1993/x/pkg/breaker"
 	"github.com/zcong1993/x/pkg/extrun"
-	log2 "github.com/zcong1993/x/pkg/log"
+	"github.com/zcong1993/x/pkg/log"
 	"github.com/zcong1993/x/pkg/metrics"
 	"github.com/zcong1993/x/pkg/prober"
 	"github.com/zcong1993/x/pkg/server/extgrpc"
@@ -31,7 +31,7 @@ type App struct {
 	HttpProber   *prober.HTTPProbe
 	StatusProber prober.Probe // grpc or http
 
-	loggerFactory  log2.LoggerFactory
+	loggerFactory  log.LoggerFactory
 	shedderFactory shedder.Factory
 
 	innerHttpOptions *innerHttpOptions
@@ -135,7 +135,7 @@ func (a *App) Start() error {
 
 func (a *App) RunDefaultServerApp(cmd *cobra.Command) {
 	// 注册日志相关 flag
-	a.loggerFactory = log2.RegistryLogger(cmd)
+	a.loggerFactory = log.RegistryLogger(cmd)
 
 	// 注册 shedder flag
 	a.shedderFactory = shedder.Register(cmd)
@@ -159,6 +159,6 @@ func FatalOnErrorf(err error, format string, args ...interface{}) {
 }
 
 func Fatal(msgs ...interface{}) {
-	fmt.Fprintln(os.Stderr, msgs...)
+	_, _ = fmt.Fprintln(os.Stderr, msgs...)
 	os.Exit(1)
 }
