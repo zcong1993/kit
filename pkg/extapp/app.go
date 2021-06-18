@@ -31,7 +31,7 @@ type App struct {
 	HttpProber   *prober.HTTPProbe
 	StatusProber prober.Probe // grpc or http
 
-	loggerFactory  log.LoggerFactory
+	loggerOption   *log.Option
 	shedderFactory shedder.Factory
 
 	innerHttpOptions *innerHttpOptions
@@ -45,14 +45,19 @@ type App struct {
 }
 
 func NewApp() *App {
-	return &App{G: &run.Group{}, innerHttpOptions: &innerHttpOptions{}, HttpProber: prober.NewHTTP()}
+	return &App{
+		G:                &run.Group{},
+		innerHttpOptions: &innerHttpOptions{},
+		HttpProber:       prober.NewHTTP(),
+		loggerOption:     &log.Option{},
+	}
 }
 
 func (a *App) InitFromCmd(cmd *cobra.Command, name string) {
 	a.App = name
 	a.Cmd = cmd
 	// 初始化日志
-	logger, err := a.loggerFactory()
+	logger, err := a.loggerOption.CreateLogger()
 	FatalOnErrorf(err, "init logger")
 	a.Logger = logger
 
@@ -135,7 +140,7 @@ func (a *App) Start() error {
 
 func (a *App) RunDefaultServerApp(cmd *cobra.Command) {
 	// 注册日志相关 flag
-	a.loggerFactory = log.RegistryLogger(cmd)
+	a.loggerOption.Register(cmd)
 
 	// 注册 shedder flag
 	a.shedderFactory = shedder.Register(cmd)

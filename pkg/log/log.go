@@ -4,16 +4,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/spf13/pflag"
-
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	klog "github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 )
-
-type LoggerFactory = func() (klog.Logger, error)
 
 // This timestamp format differs from RFC3339Nano by using .000 instead
 // of .999999999 which changes the timestamp from 9 variable to 3 fixed
@@ -28,12 +24,6 @@ func DefaultLogger() klog.Logger {
 	logger := klog.NewLogfmtLogger(klog.NewSyncWriter(os.Stderr))
 	logger = klog.With(logger, "ts", timestampFormat, "caller", klog.DefaultCaller)
 	return logger
-}
-
-func Register(flagSet *pflag.FlagSet) {
-	flagSet.String("log.level", "info", "Log level")
-	flagSet.String("log.format", "logfmt", "Log format")
-	flagSet.Bool("log.caller", false, "If with caller field")
 }
 
 type Option struct {
@@ -78,18 +68,16 @@ func NewLogger(opt *Option) (klog.Logger, error) {
 	return l, nil
 }
 
-func RegistryLogger(app *cobra.Command) LoggerFactory {
-	var opt Option
-
+func (opt *Option) Register(app *cobra.Command) {
 	f := app.PersistentFlags()
 
 	f.StringVar(&opt.LogLevel, "log.level", "info", "Log level")
 	f.StringVar(&opt.LogFormat, "log.format", "logfmt", "Log format")
 	f.BoolVar(&opt.Caller, "log.caller", false, "If with caller field")
+}
 
-	return func() (klog.Logger, error) {
-		return NewLogger(&opt)
-	}
+func (opt *Option) CreateLogger() (klog.Logger, error) {
+	return NewLogger(opt)
 }
 
 func contains(val string, enums []string) bool {
