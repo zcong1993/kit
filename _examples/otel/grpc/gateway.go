@@ -8,7 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
-	"github.com/zcong1993/x/_examples/grpc/pb"
+	"github.com/zcong1993/x/_examples/otel/grpc/pb"
 	"github.com/zcong1993/x/pkg/extgrpcc"
 	"github.com/zcong1993/x/pkg/ginhelper"
 	"github.com/zcong1993/x/pkg/server/exthttp"

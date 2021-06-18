@@ -17,7 +17,7 @@ import (
 	"github.com/zcong1993/x/pkg/extapp"
 
 	"github.com/spf13/cobra"
-	"github.com/zcong1993/x/_examples/grpc/pb"
+	"github.com/zcong1993/x/_examples/otel/grpc/pb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
