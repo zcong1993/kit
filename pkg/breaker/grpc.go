@@ -15,11 +15,16 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func WithGrpcServerBreaker(logger log.Logger) extgrpc.Option {
+func WithGrpcServerBreaker(logger log.Logger, opt *Option) extgrpc.Option {
+	if opt.disable {
+		level.Info(logger).Log("component", "grpc/breaker", "msg", "disable middleware")
+		return extgrpc.NoopOption()
+	}
+
 	zero.SetupMetrics()
 	metrics := zero.Metrics
 
-	level.Info(logger).Log("component", "breaker-grpc", "msg", "load middleware")
+	level.Info(logger).Log("component", "grpc/breaker", "msg", "load middleware")
 
 	brkGetter := NewBrkGetter()
 
@@ -36,7 +41,7 @@ func unaryServerInterceptor(logger log.Logger, metrics *stat.Metrics, brkGetter 
 		promise, err := brk.Allow()
 		if err != nil {
 			metrics.AddDrop()
-			level.Error(logger).Log("component", "breaker-grpc", "msg", "[grpc] dropped", "type", "unary", "method", info.FullMethod)
+			level.Error(logger).Log("component", "grpc/breaker", "msg", "[grpc] dropped", "type", "unary", "method", info.FullMethod)
 			return nil, status.Errorf(codes.ResourceExhausted, "%s is rejected by grpc_breaker middleware, please retry later.", info.FullMethod)
 		}
 
@@ -60,7 +65,7 @@ func streamServerInterceptor(logger log.Logger, metrics *stat.Metrics, brkGetter
 		promise, err := brk.Allow()
 		if err != nil {
 			metrics.AddDrop()
-			level.Error(logger).Log("component", "breaker-grpc", "msg", "[grpc] dropped", "type", "stream", "method", info.FullMethod)
+			level.Error(logger).Log("component", "grpc/breaker", "msg", "[grpc] dropped", "type", "stream", "method", info.FullMethod)
 			return status.Errorf(codes.ResourceExhausted, "%s is rejected by grpc_breaker middleware, please retry later.", info.FullMethod)
 		}
 

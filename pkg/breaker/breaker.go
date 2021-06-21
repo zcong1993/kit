@@ -3,8 +3,31 @@ package breaker
 import (
 	"sync"
 
+	"github.com/spf13/cobra"
+
 	"github.com/tal-tech/go-zero/core/breaker"
 )
+
+const (
+	disableBreaker = "breaker.disable"
+	helpText       = "If disable breaker."
+)
+
+type Factory = func() *Option
+
+type Option struct {
+	disable bool
+}
+
+func Register(cmd *cobra.Command) Factory {
+	var disable bool
+
+	cmd.PersistentFlags().BoolVar(&disable, disableBreaker, false, helpText)
+
+	return func() *Option {
+		return &Option{disable: disable}
+	}
+}
 
 type BrkGetter struct {
 	store map[string]breaker.Breaker

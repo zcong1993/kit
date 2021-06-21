@@ -13,12 +13,19 @@ import (
 
 const breakerSeparator = "://"
 
-func GinBreakerMiddleware(logger log.Logger) gin.HandlerFunc {
+func GinBreakerMiddleware(logger log.Logger, opt *Option) gin.HandlerFunc {
+	if opt.disable {
+		level.Info(logger).Log("component", "http/breaker", "msg", "disable middleware")
+		return func(c *gin.Context) {
+			c.Next()
+		}
+	}
+
 	zero.SetupMetrics()
 	metrics := zero.Metrics
 	brkGetter := NewBrkGetter()
 
-	level.Info(logger).Log("component", "breaker", "msg", "load middleware")
+	level.Info(logger).Log("component", "http/breaker", "msg", "load middleware")
 
 	return func(c *gin.Context) {
 		fullPath := c.FullPath()
@@ -34,7 +41,7 @@ func GinBreakerMiddleware(logger log.Logger) gin.HandlerFunc {
 		promise, err := brk.Allow()
 		if err != nil {
 			metrics.AddDrop()
-			level.Error(logger).Log("component", "breaker", "msg", "[http] dropped", "url", c.Request.URL.String(), "ip", c.ClientIP())
+			level.Error(logger).Log("component", "http/breaker", "msg", "[http] dropped", "url", c.Request.URL.String(), "ip", c.ClientIP())
 			c.AbortWithStatus(http.StatusServiceUnavailable)
 			return
 		}

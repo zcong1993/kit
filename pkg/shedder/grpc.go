@@ -18,11 +18,11 @@ import (
 func WithGrpcShedder(logger log.Logger, shedder load.Shedder) extgrpc.Option {
 	// noop middleware
 	if shedder == nil {
-		level.Info(logger).Log("component", "shedder-grpc", "msg", "disable middleware")
+		level.Info(logger).Log("component", "grpc/shedder", "msg", "disable middleware")
 		return extgrpc.NoopOption()
 	}
 
-	level.Info(logger).Log("component", "shedder-grpc", "msg", "load middleware")
+	level.Info(logger).Log("component", "grpc/shedder", "msg", "load middleware")
 
 	zero.SetupMetrics()
 	metrics := zero.Metrics
@@ -41,7 +41,7 @@ func unaryServerInterceptor(logger log.Logger, shedder load.Shedder, metrics *st
 		if err != nil {
 			metrics.AddDrop()
 			sheddingStat.IncrementDrop()
-			level.Error(logger).Log("component", "shedder-grpc", "msg", "[grpc] dropped", "type", "unary", "method", info.FullMethod)
+			level.Error(logger).Log("component", "grpc/shedder", "msg", "[grpc] dropped", "type", "unary", "method", info.FullMethod)
 			return nil, status.Errorf(codes.ResourceExhausted, "%s is rejected by grpc_shedder middleware, please retry later.", info.FullMethod)
 		}
 
@@ -65,7 +65,7 @@ func streamServerInterceptor(logger log.Logger, shedder load.Shedder, metrics *s
 		if err != nil {
 			metrics.AddDrop()
 			sheddingStat.IncrementDrop()
-			level.Error(logger).Log("component", "shedder-grpc", "msg", "[grpc] dropped", "type", "stream", "method", info.FullMethod)
+			level.Error(logger).Log("component", "grpc/shedder", "msg", "[grpc] dropped", "type", "stream", "method", info.FullMethod)
 			return status.Errorf(codes.ResourceExhausted, "%s is rejected by grpc_shedder middleware, please retry later.", info.FullMethod)
 		}
 

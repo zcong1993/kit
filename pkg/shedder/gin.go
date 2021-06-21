@@ -13,13 +13,13 @@ import (
 func GinShedderMiddleware(shedder load.Shedder, logger log.Logger) gin.HandlerFunc {
 	// noop middleware
 	if shedder == nil {
-		level.Info(logger).Log("component", "shedder", "msg", "disable middleware")
+		level.Info(logger).Log("component", "http/shedder", "msg", "disable middleware")
 		return func(c *gin.Context) {
 			c.Next()
 		}
 	}
 
-	level.Info(logger).Log("component", "shedder", "msg", "load middleware")
+	level.Info(logger).Log("component", "http/shedder", "msg", "load middleware")
 
 	zero.SetupMetrics()
 	metrics := zero.Metrics
@@ -31,7 +31,7 @@ func GinShedderMiddleware(shedder load.Shedder, logger log.Logger) gin.HandlerFu
 		if err != nil {
 			metrics.AddDrop()
 			sheddingStat.IncrementDrop()
-			level.Error(logger).Log("component", "shedder", "msg", "[http] dropped", "url", c.Request.URL.String(), "ip", c.ClientIP())
+			level.Error(logger).Log("component", "http/shedder", "msg", "[http] dropped", "url", c.Request.URL.String(), "ip", c.ClientIP())
 			c.AbortWithStatus(http.StatusServiceUnavailable)
 			return
 		}

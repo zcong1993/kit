@@ -15,7 +15,7 @@ type Factory = func() load.Shedder
 func Register(app *cobra.Command) Factory {
 	var cpuThreshold int64
 
-	app.PersistentFlags().Int64Var(&cpuThreshold, shedderCpuThreshold, 0, helpText)
+	app.PersistentFlags().Int64Var(&cpuThreshold, shedderCpuThreshold, 900, helpText)
 
 	return func() load.Shedder {
 		return NewShedder(cpuThreshold)

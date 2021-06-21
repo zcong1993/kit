@@ -33,6 +33,7 @@ type App struct {
 
 	loggerOption   *log.Option
 	shedderFactory shedder.Factory
+	breakerFactory breaker.Factory
 
 	innerHttpOptions *innerHttpOptions
 	innerHttpFactory innerHttpFactory
@@ -87,8 +88,7 @@ func (a *App) GinServer(opts ...exthttp.OptionFunc) *gin.Engine {
 	// shedder 中间件
 	r.Use(shedder.GinShedderMiddleware(a.shedderFactory(), a.Logger))
 	// breaker 中间件
-	// todo: allow disable breaker
-	r.Use(breaker.GinBreakerMiddleware(a.Logger))
+	r.Use(breaker.GinBreakerMiddleware(a.Logger, a.breakerFactory()))
 
 	a.httpServer = exthttp.NewHttpServer(r, a.Logger, opts...)
 
@@ -103,8 +103,7 @@ func (a *App) GrpcServer(opts ...extgrpc.Option) *extgrpc.Server {
 		metrics.WithServerMetrics(a.Logger, a.Reg),
 		extgrpc.WithOtelTracing(),
 		shedder.WithGrpcShedder(a.Logger, a.shedderFactory()),
-		// todo: allow disable breaker
-		breaker.WithGrpcServerBreaker(a.Logger),
+		breaker.WithGrpcServerBreaker(a.Logger, a.breakerFactory()),
 	}
 
 	o = append(o, opts...)
@@ -144,6 +143,9 @@ func (a *App) RunDefaultServerApp(cmd *cobra.Command) {
 
 	// 注册 shedder flag
 	a.shedderFactory = shedder.Register(cmd)
+
+	// 注册 breaker flag
+	a.breakerFactory = breaker.Register(cmd)
 
 	// 注册 inner app server
 	a.innerHttpFactory = registerInnerHttp(a, cmd)
