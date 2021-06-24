@@ -13,14 +13,16 @@ import (
 
 const breakerSeparator = "://"
 
-func GinBreakerMiddleware(logger log.Logger, opt *Option) gin.HandlerFunc {
+func RegisterGinBreaker(r *gin.Engine, logger log.Logger, opt *Option) {
 	if opt.disable {
 		level.Info(logger).Log("component", "http/breaker", "msg", "disable middleware")
-		return func(c *gin.Context) {
-			c.Next()
-		}
+		return
 	}
 
+	r.Use(GinBreakerMiddleware(logger))
+}
+
+func GinBreakerMiddleware(logger log.Logger) gin.HandlerFunc {
 	zero.SetupMetrics()
 	metrics := zero.Metrics
 	brkGetter := NewBrkGetter()

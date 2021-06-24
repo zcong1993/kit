@@ -13,13 +13,13 @@ const (
 	helpText       = "If disable breaker."
 )
 
-type Factory = func() *Option
+type OptionFactory = func() *Option
 
 type Option struct {
 	disable bool
 }
 
-func Register(cmd *cobra.Command) Factory {
+func Register(cmd *cobra.Command) OptionFactory {
 	var disable bool
 
 	cmd.PersistentFlags().BoolVar(&disable, disableBreaker, false, helpText)

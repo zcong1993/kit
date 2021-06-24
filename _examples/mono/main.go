@@ -16,5 +16,5 @@ func main() {
 	app := extapp.NewApp()
 
 	cmd.AddCommand(service1Cmd(app), service2Cmd(app))
-	app.RunDefaultServerApp(cmd)
+	app.Run(cmd)
 }

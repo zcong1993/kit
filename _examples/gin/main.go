@@ -46,7 +46,7 @@ func main() {
 		},
 	}
 
-	app.RunDefaultServerApp(cmd)
+	app.Run(cmd)
 }
 
 func addRouters(r *gin.Engine) {

@@ -31,9 +31,9 @@ type App struct {
 	HttpProber   *prober.HTTPProbe
 	StatusProber prober.Probe // grpc or http
 
-	loggerOption   *log.Option
-	shedderFactory shedder.Factory
-	breakerFactory breaker.Factory
+	loggerOption         *log.Option
+	shedderFactory       shedder.Factory
+	breakerOptionFactory breaker.OptionFactory
 
 	innerHttpOptions *innerHttpOptions
 	innerHttpFactory innerHttpFactory
@@ -86,9 +86,9 @@ func (a *App) GinServer(opts ...exthttp.OptionFunc) *gin.Engine {
 	r.Use(metrics.NewInstrumentationMiddleware(a.Reg))
 	r.Use(oteltracing.GinMiddleware(a.App))
 	// shedder 中间件
-	r.Use(shedder.GinShedderMiddleware(a.shedderFactory(), a.Logger))
+	shedder.RegisterGinShedder(r, a.shedderFactory(), a.Logger)
 	// breaker 中间件
-	r.Use(breaker.GinBreakerMiddleware(a.Logger, a.breakerFactory()))
+	breaker.RegisterGinBreaker(r, a.Logger, a.breakerOptionFactory())
 
 	a.httpServer = exthttp.NewHttpServer(r, a.Logger, opts...)
 
@@ -103,7 +103,7 @@ func (a *App) GrpcServer(opts ...extgrpc.Option) *extgrpc.Server {
 		metrics.WithServerMetrics(a.Logger, a.Reg),
 		extgrpc.WithOtelTracing(),
 		shedder.WithGrpcShedder(a.Logger, a.shedderFactory()),
-		breaker.WithGrpcServerBreaker(a.Logger, a.breakerFactory()),
+		breaker.WithGrpcServerBreaker(a.Logger, a.breakerOptionFactory()),
 	}
 
 	o = append(o, opts...)
@@ -137,7 +137,7 @@ func (a *App) Start() error {
 	return a.G.Run()
 }
 
-func (a *App) RunDefaultServerApp(cmd *cobra.Command) {
+func (a *App) Run(cmd *cobra.Command) {
 	// 注册日志相关 flag
 	a.loggerOption.Register(cmd)
 
@@ -145,7 +145,7 @@ func (a *App) RunDefaultServerApp(cmd *cobra.Command) {
 	a.shedderFactory = shedder.Register(cmd)
 
 	// 注册 breaker flag
-	a.breakerFactory = breaker.Register(cmd)
+	a.breakerOptionFactory = breaker.Register(cmd)
 
 	// 注册 inner app server
 	a.innerHttpFactory = registerInnerHttp(a, cmd)

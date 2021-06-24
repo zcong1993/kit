@@ -10,10 +10,19 @@ import (
 	"github.com/zcong1993/x/pkg/zero"
 )
 
+func RegisterGinShedder(r *gin.Engine, shedder load.Shedder, logger log.Logger) {
+	if shedder == nil {
+		level.Info(logger).Log("component", "http/shedder", "msg", "disable middleware")
+		return
+	}
+
+	r.Use(GinShedderMiddleware(shedder, logger))
+}
+
 func GinShedderMiddleware(shedder load.Shedder, logger log.Logger) gin.HandlerFunc {
 	// noop middleware
 	if shedder == nil {
-		level.Info(logger).Log("component", "http/shedder", "msg", "disable middleware")
+		level.Error(logger).Log("component", "http/shedder", "msg", "shedder is nil")
 		return func(c *gin.Context) {
 			c.Next()
 		}

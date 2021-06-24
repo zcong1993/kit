@@ -71,8 +71,8 @@ func NewLogger(opt *Option) (klog.Logger, error) {
 func (opt *Option) Register(app *cobra.Command) {
 	f := app.PersistentFlags()
 
-	f.StringVar(&opt.LogLevel, "log.level", "info", "Log level")
-	f.StringVar(&opt.LogFormat, "log.format", "logfmt", "Log format")
+	f.StringVar(&opt.LogLevel, "log.level", "info", "Log level, one of debug info warn error")
+	f.StringVar(&opt.LogFormat, "log.format", "logfmt", "Log format, logfmt or json")
 	f.BoolVar(&opt.Caller, "log.caller", false, "If with caller field")
 }
 

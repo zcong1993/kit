@@ -32,9 +32,9 @@ type innerHttpFactory = func() *exthttp.MuxServer
 func registerInnerHttp(app *App, cmd *cobra.Command) innerHttpFactory {
 	f := cmd.PersistentFlags()
 
-	f.BoolVar(&app.innerHttpOptions.withPprof, withPprof, false, "If enable pprof routes.")
-	f.BoolVar(&app.innerHttpOptions.withMetrics, withMetrics, true, "If expose metrics router.")
-	f.StringVar(&app.innerHttpOptions.addr, addr, ":6060", "Inner http server addr.")
+	f.BoolVar(&app.innerHttpOptions.withPprof, withPprof, false, "If enable pprof routes, /debug/pprof/*.")
+	f.BoolVar(&app.innerHttpOptions.withMetrics, withMetrics, true, "If expose metrics router, /metrics.")
+	f.StringVar(&app.innerHttpOptions.addr, addr, ":6060", "Inner metrics/pprof http server addr.")
 	f.BoolVar(&app.innerHttpOptions.disable, disable, false, "If disable inner http server.")
 	f.DurationVar(&app.innerHttpOptions.gracePeriod, gracePeriod, 0, "Inner http exit grace period.")
 

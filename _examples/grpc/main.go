@@ -15,5 +15,5 @@ func main() {
 
 	cmd.AddCommand(serviceCmd(app), gatewayCmd(app), middleCmd(app))
 
-	app.RunDefaultServerApp(cmd)
+	app.Run(cmd)
 }
