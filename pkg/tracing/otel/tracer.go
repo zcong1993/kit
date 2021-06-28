@@ -5,8 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
+	"github.com/zcong1993/x/pkg/log"
 
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"
@@ -75,13 +74,14 @@ func initSampler() (trace.Sampler, error) {
 	}
 }
 
-func InitTracerFromEnv(logger log.Logger, serviceName string, attrs ...attribute.KeyValue) error {
+func InitTracerFromEnv(logger *log.Logger, serviceName string, attrs ...attribute.KeyValue) error {
+	c := log.Component("otel-tracing")
 	if os.Getenv(exporterTypekey) == "" {
-		level.Info(logger).Log("component", "otel-tracing", "msg", "disable tracing")
+		logger.Info("disable tracing", c)
 		return nil
 	}
 
-	level.Info(logger).Log("component", "otel-tracing", "msg", "enable tracing")
+	logger.Info("enable tracing", c)
 
 	exporter, err := initExporter()
 	if err != nil {

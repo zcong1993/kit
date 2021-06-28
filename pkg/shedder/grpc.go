@@ -3,11 +3,12 @@ package shedder
 import (
 	"context"
 
+	"github.com/zcong1993/x/pkg/log"
+	"go.uber.org/zap"
+
 	"github.com/zcong1993/x/pkg/server/extgrpc"
 	"github.com/zcong1993/x/pkg/zero"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/tal-tech/go-zero/core/load"
 	"github.com/tal-tech/go-zero/core/stat"
 	"google.golang.org/grpc"
@@ -15,14 +16,15 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func WithGrpcShedder(logger log.Logger, shedder load.Shedder) extgrpc.Option {
+func WithGrpcShedder(logger *log.Logger, shedder load.Shedder) extgrpc.Option {
+	logger = logger.With(log.Component("grpc/shedder"))
 	// noop middleware
 	if shedder == nil {
-		level.Info(logger).Log("component", "grpc/shedder", "msg", "disable middleware")
+		logger.Info("disable middleware")
 		return extgrpc.NoopOption()
 	}
 
-	level.Info(logger).Log("component", "grpc/shedder", "msg", "load middleware")
+	logger.Info("load middleware")
 
 	zero.SetupMetrics()
 	metrics := zero.Metrics
@@ -34,14 +36,14 @@ func WithGrpcShedder(logger log.Logger, shedder load.Shedder) extgrpc.Option {
 	)
 }
 
-func unaryServerInterceptor(logger log.Logger, shedder load.Shedder, metrics *stat.Metrics, sheddingStat *load.SheddingStat) grpc.UnaryServerInterceptor {
+func unaryServerInterceptor(logger *log.Logger, shedder load.Shedder, metrics *stat.Metrics, sheddingStat *load.SheddingStat) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		sheddingStat.IncrementTotal()
 		promise, err := shedder.Allow()
 		if err != nil {
 			metrics.AddDrop()
 			sheddingStat.IncrementDrop()
-			level.Error(logger).Log("component", "grpc/shedder", "msg", "[grpc] dropped", "type", "unary", "method", info.FullMethod)
+			logger.Error("[grpc] dropped", zap.String("type", "unary"), zap.String("method", info.FullMethod))
 			return nil, status.Errorf(codes.ResourceExhausted, "%s is rejected by grpc_shedder middleware, please retry later.", info.FullMethod)
 		}
 
@@ -58,14 +60,14 @@ func unaryServerInterceptor(logger log.Logger, shedder load.Shedder, metrics *st
 	}
 }
 
-func streamServerInterceptor(logger log.Logger, shedder load.Shedder, metrics *stat.Metrics, sheddingStat *load.SheddingStat) grpc.StreamServerInterceptor {
+func streamServerInterceptor(logger *log.Logger, shedder load.Shedder, metrics *stat.Metrics, sheddingStat *load.SheddingStat) grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		sheddingStat.IncrementTotal()
 		promise, err := shedder.Allow()
 		if err != nil {
 			metrics.AddDrop()
 			sheddingStat.IncrementDrop()
-			level.Error(logger).Log("component", "grpc/shedder", "msg", "[grpc] dropped", "type", "stream", "method", info.FullMethod)
+			logger.Error("[grpc] dropped", zap.String("type", "stream"), zap.String("method", info.FullMethod))
 			return status.Errorf(codes.ResourceExhausted, "%s is rejected by grpc_shedder middleware, please retry later.", info.FullMethod)
 		}
 

@@ -4,12 +4,13 @@ import (
 	"math"
 	"time"
 
+	"github.com/zcong1993/x/pkg/log"
+
 	"github.com/gin-gonic/gin"
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 )
 
-func LoggerMw(logger log.Logger) gin.HandlerFunc {
+func LoggerMw(logger *log.Logger) gin.HandlerFunc {
+	sl := logger.Sugar()
 	return func(c *gin.Context) {
 		// other handler can change c.Path so:
 		path := c.Request.URL.Path
@@ -25,15 +26,15 @@ func LoggerMw(logger log.Logger) gin.HandlerFunc {
 		}
 
 		if len(c.Errors) > 0 {
-			level.Error(logger).Log("path", path, "method", c.Request.Method, "statusCode", statusCode, "latency", latency, "clientIP", clientIP, "dataLength", dataLength, "message", c.Errors.ByType(gin.ErrorTypePrivate).String())
+			sl.Errorw(c.Errors.ByType(gin.ErrorTypePrivate).String(), "path", path, "method", c.Request.Method, "statusCode", statusCode, "latency", latency, "clientIP", clientIP, "dataLength", dataLength)
 		} else {
-			level.Info(logger).Log("path", path, "method", c.Request.Method, "statusCode", statusCode, "latency", latency, "clientIP", clientIP, "dataLength", dataLength)
+			sl.Infow("", "path", path, "method", c.Request.Method, "statusCode", statusCode, "latency", latency, "clientIP", clientIP, "dataLength", dataLength)
 		}
 	}
 }
 
-func DefaultWithLogger(logger log.Logger) *gin.Engine {
+func DefaultWithLogger(logger *log.Logger) *gin.Engine {
 	g := gin.New()
-	g.Use(LoggerMw(log.With(logger, "component", "requestLog")), gin.Recovery())
+	g.Use(LoggerMw(logger.With(log.Component("requestLog"))), gin.Recovery())
 	return g
 }

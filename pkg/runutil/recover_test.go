@@ -8,7 +8,7 @@ import (
 )
 
 func TestWithRecover(t *testing.T) {
-	logger := log.DefaultLogger()
+	logger, _ := log.DefaultLogger()
 	runutil.WithRecover(func() {
 		panic(map[string]string{"a": "x"})
 	}, logger)

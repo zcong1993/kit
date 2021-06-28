@@ -3,36 +3,39 @@ package shedder
 import (
 	"net/http"
 
+	"github.com/zcong1993/x/pkg/log"
+
 	"github.com/gin-gonic/gin"
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/tal-tech/go-zero/core/load"
 	"github.com/zcong1993/x/pkg/zero"
 )
 
-func RegisterGinShedder(r *gin.Engine, shedder load.Shedder, logger log.Logger) {
+func RegisterGinShedder(r *gin.Engine, shedder load.Shedder, logger *log.Logger) {
+	logger = logger.With(log.Component("http/shedder"))
 	if shedder == nil {
-		level.Info(logger).Log("component", "http/shedder", "msg", "disable middleware")
+		logger.Info("disable middleware")
 		return
 	}
 
 	r.Use(GinShedderMiddleware(shedder, logger))
 }
 
-func GinShedderMiddleware(shedder load.Shedder, logger log.Logger) gin.HandlerFunc {
+func GinShedderMiddleware(shedder load.Shedder, logger *log.Logger) gin.HandlerFunc {
 	// noop middleware
 	if shedder == nil {
-		level.Error(logger).Log("component", "http/shedder", "msg", "shedder is nil")
+		logger.Error("shedder is nil")
 		return func(c *gin.Context) {
 			c.Next()
 		}
 	}
 
-	level.Info(logger).Log("component", "http/shedder", "msg", "load middleware")
+	logger.Info("load middleware")
 
 	zero.SetupMetrics()
 	metrics := zero.Metrics
 	sheddingStat := load.NewSheddingStat("api")
+
+	sl := logger.Sugar()
 
 	return func(c *gin.Context) {
 		sheddingStat.IncrementTotal()
@@ -40,7 +43,7 @@ func GinShedderMiddleware(shedder load.Shedder, logger log.Logger) gin.HandlerFu
 		if err != nil {
 			metrics.AddDrop()
 			sheddingStat.IncrementDrop()
-			level.Error(logger).Log("component", "http/shedder", "msg", "[http] dropped", "url", c.Request.URL.String(), "ip", c.ClientIP())
+			sl.Errorw("[http] dropped", "url", c.Request.URL.String(), "ip", c.ClientIP())
 			c.AbortWithStatus(http.StatusServiceUnavailable)
 			return
 		}

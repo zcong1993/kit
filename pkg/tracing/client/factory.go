@@ -8,10 +8,10 @@ import (
 	"io"
 	"strings"
 
+	"github.com/zcong1993/x/pkg/log"
+
 	"github.com/zcong1993/x/pkg/tracing/jaeger"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/opentracing/opentracing-go"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -29,8 +29,8 @@ type TracingConfig struct {
 	Config interface{}     `yaml:"config"`
 }
 
-func NewTracer(ctx context.Context, logger log.Logger, metrics prometheus.Registerer, confContentYaml []byte) (opentracing.Tracer, io.Closer, error) {
-	level.Info(logger).Log("msg", "loading tracing configuration")
+func NewTracer(ctx context.Context, logger *log.Logger, metrics prometheus.Registerer, confContentYaml []byte) (opentracing.Tracer, io.Closer, error) {
+	logger.Info("loading tracing configuration")
 	tracingConf := &TracingConfig{}
 
 	if err := yaml.UnmarshalStrict(confContentYaml, tracingConf); err != nil {

@@ -5,29 +5,32 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/zcong1993/x/pkg/log"
+
 	"github.com/gin-gonic/gin"
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/zcong1993/x/pkg/zero"
 )
 
 const breakerSeparator = "://"
 
-func RegisterGinBreaker(r *gin.Engine, logger log.Logger, opt *Option) {
+func RegisterGinBreaker(r *gin.Engine, logger *log.Logger, opt *Option) {
+	logger = logger.With(log.Component("http/breaker"))
 	if opt.disable {
-		level.Info(logger).Log("component", "http/breaker", "msg", "disable middleware")
+		logger.Info("disable middleware")
 		return
 	}
 
 	r.Use(GinBreakerMiddleware(logger))
 }
 
-func GinBreakerMiddleware(logger log.Logger) gin.HandlerFunc {
+func GinBreakerMiddleware(logger *log.Logger) gin.HandlerFunc {
 	zero.SetupMetrics()
 	metrics := zero.Metrics
 	brkGetter := NewBrkGetter()
 
-	level.Info(logger).Log("component", "http/breaker", "msg", "load middleware")
+	logger.Info("load middleware")
+
+	sl := logger.Sugar()
 
 	return func(c *gin.Context) {
 		fullPath := c.FullPath()
@@ -43,7 +46,7 @@ func GinBreakerMiddleware(logger log.Logger) gin.HandlerFunc {
 		promise, err := brk.Allow()
 		if err != nil {
 			metrics.AddDrop()
-			level.Error(logger).Log("component", "http/breaker", "msg", "[http] dropped", "url", c.Request.URL.String(), "ip", c.ClientIP())
+			sl.Errorw("[http] dropped", "url", c.Request.URL.String(), "ip", c.ClientIP())
 			c.AbortWithStatus(http.StatusServiceUnavailable)
 			return
 		}

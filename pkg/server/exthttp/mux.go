@@ -4,12 +4,11 @@ import (
 	"net/http"
 	"net/http/pprof"
 
+	"github.com/zcong1993/x/pkg/log"
+
 	"github.com/zcong1993/x/pkg/prober"
 
-	"github.com/go-kit/kit/log/level"
-
 	"github.com/felixge/fgprof"
-	"github.com/go-kit/kit/log"
 	"github.com/oklog/run"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -22,7 +21,7 @@ type MuxServer struct {
 	mux *http.ServeMux
 }
 
-func NewMuxServer(logger log.Logger, opts ...OptionFunc) *MuxServer {
+func NewMuxServer(logger *log.Logger, opts ...OptionFunc) *MuxServer {
 	mux := http.NewServeMux()
 	return &MuxServer{
 		HttpServer: NewHttpServer(mux, logger, opts...),
@@ -39,7 +38,7 @@ func (ms *MuxServer) Handle(pattern string, handler http.Handler) {
 }
 
 func (ms *MuxServer) RegisterProfiler() {
-	level.Info(ms.logger).Log("msg", "register profiler")
+	ms.logger.Info("register profiler")
 	ms.mux.HandleFunc("/debug/pprof/", pprof.Index)
 	ms.mux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
 	ms.mux.HandleFunc("/debug/pprof/profile", pprof.Profile)
@@ -50,10 +49,10 @@ func (ms *MuxServer) RegisterProfiler() {
 
 func (ms *MuxServer) RegisterMetrics(g prometheus.Gatherer) {
 	if g != nil {
-		level.Info(ms.logger).Log("msg", "register prometheus gatherer")
+		ms.logger.Info("register prometheus gatherer")
 		ms.mux.Handle("/metrics", promhttp.HandlerFor(g, promhttp.HandlerOpts{}))
 	} else {
-		level.Info(ms.logger).Log("msg", "register prometheus default gatherer")
+		ms.logger.Info("register prometheus default gatherer")
 		ms.mux.Handle("/metrics", promhttp.HandlerFor(prometheus.DefaultGatherer, promhttp.HandlerOpts{}))
 	}
 }

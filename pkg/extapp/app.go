@@ -5,7 +5,6 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	klog "github.com/go-kit/kit/log"
 	"github.com/oklog/run"
 	"github.com/pkg/errors"
 	"github.com/prometheus/client_golang/prometheus"
@@ -23,7 +22,7 @@ import (
 
 type App struct {
 	App          string
-	Logger       klog.Logger
+	Logger       *log.Logger
 	Reg          prometheus.Registerer
 	Registry     *prometheus.Registry
 	Cmd          *cobra.Command
@@ -46,11 +45,16 @@ type App struct {
 }
 
 func NewApp() *App {
+	// logger before init
+	logger, err := log.DefaultLogger()
+	FatalOnErrorf(err, "init logger")
+
 	return &App{
 		G:                &run.Group{},
 		innerHttpOptions: &innerHttpOptions{},
 		HttpProber:       prober.NewHTTP(),
 		loggerOption:     &log.Option{},
+		Logger:           logger,
 	}
 }
 
@@ -61,8 +65,9 @@ func (a *App) InitFromCmd(cmd *cobra.Command, name string) {
 	logger, err := a.loggerOption.CreateLogger()
 	FatalOnErrorf(err, "init logger")
 	a.Logger = logger
+	log.SyncOnClose(a.G, logger)
 
-	// 初始化日志
+	// 初始化 metrics
 	me := metrics.InitMetrics()
 	a.Registry = me
 	a.Reg = prometheus.WrapRegistererWith(prometheus.Labels{"app": name}, me)

@@ -6,7 +6,6 @@ require (
 	github.com/HdrHistogram/hdrhistogram-go v1.0.1 // indirect
 	github.com/felixge/fgprof v0.9.1
 	github.com/gin-gonic/gin v1.7.1
-	github.com/go-kit/kit v0.10.0
 	github.com/go-playground/validator/v10 v10.4.1
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
@@ -28,6 +27,7 @@ require (
 	go.opentelemetry.io/otel/sdk v0.20.0
 	go.opentelemetry.io/otel/trace v0.20.0
 	go.uber.org/atomic v1.7.0
+	go.uber.org/zap v1.17.0
 	google.golang.org/grpc v1.37.0
 	google.golang.org/protobuf v1.26.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0

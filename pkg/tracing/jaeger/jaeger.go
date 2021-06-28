@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"io"
 
+	"github.com/zcong1993/x/pkg/log"
+
 	"github.com/zcong1993/x/pkg/tracing"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/uber/jaeger-client-go"
@@ -33,7 +33,7 @@ func (t *Tracer) GetTraceIDFromSpanContext(ctx opentracing.SpanContext) (string,
 }
 
 // NewTracer create tracer from YAML.
-func NewTracer(ctx context.Context, logger log.Logger, metrics prometheus.Registerer, conf []byte) (opentracing.Tracer, io.Closer, error) {
+func NewTracer(ctx context.Context, logger *log.Logger, metrics prometheus.Registerer, conf []byte) (opentracing.Tracer, io.Closer, error) {
 	var (
 		cfg          *config.Configuration
 		err          error
@@ -41,10 +41,10 @@ func NewTracer(ctx context.Context, logger log.Logger, metrics prometheus.Regist
 		closer       io.Closer
 	)
 	if conf != nil {
-		level.Info(logger).Log("msg", "loading Jaeger tracing configuration from YAML")
+		logger.Info("loading Jaeger tracing configuration from YAML")
 		cfg, err = ParseConfigFromYaml(conf)
 	} else {
-		level.Info(logger).Log("msg", "loading Jaeger tracing configuration from ENV")
+		logger.Info("loading Jaeger tracing configuration from ENV")
 		cfg, err = config.FromEnv()
 	}
 	if err != nil {

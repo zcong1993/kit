@@ -4,27 +4,29 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/zcong1993/x/pkg/log"
+	"go.uber.org/zap"
+
 	"github.com/zcong1993/x/pkg/server/extgrpc"
 	"github.com/zcong1993/x/pkg/zero"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/tal-tech/go-zero/core/stat"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-func WithGrpcServerBreaker(logger log.Logger, opt *Option) extgrpc.Option {
+func WithGrpcServerBreaker(logger *log.Logger, opt *Option) extgrpc.Option {
+	logger = logger.With(log.Component("grpc/shedder"))
 	if opt.disable {
-		level.Info(logger).Log("component", "grpc/breaker", "msg", "disable middleware")
+		logger.Info("disable middleware")
 		return extgrpc.NoopOption()
 	}
 
 	zero.SetupMetrics()
 	metrics := zero.Metrics
 
-	level.Info(logger).Log("component", "grpc/breaker", "msg", "load middleware")
+	logger.Info("load middleware")
 
 	brkGetter := NewBrkGetter()
 
@@ -34,14 +36,14 @@ func WithGrpcServerBreaker(logger log.Logger, opt *Option) extgrpc.Option {
 	)
 }
 
-func unaryServerInterceptor(logger log.Logger, metrics *stat.Metrics, brkGetter *BrkGetter) grpc.UnaryServerInterceptor {
+func unaryServerInterceptor(logger *log.Logger, metrics *stat.Metrics, brkGetter *BrkGetter) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		brk := brkGetter.Get(info.FullMethod)
 		// breaker logic
 		promise, err := brk.Allow()
 		if err != nil {
 			metrics.AddDrop()
-			level.Error(logger).Log("component", "grpc/breaker", "msg", "[grpc] dropped", "type", "unary", "method", info.FullMethod)
+			logger.Error("[grpc] dropped", zap.String("type", "unary"), zap.String("method", info.FullMethod))
 			return nil, status.Errorf(codes.ResourceExhausted, "%s is rejected by grpc_breaker middleware, please retry later.", info.FullMethod)
 		}
 
@@ -58,14 +60,14 @@ func unaryServerInterceptor(logger log.Logger, metrics *stat.Metrics, brkGetter 
 	}
 }
 
-func streamServerInterceptor(logger log.Logger, metrics *stat.Metrics, brkGetter *BrkGetter) grpc.StreamServerInterceptor {
+func streamServerInterceptor(logger *log.Logger, metrics *stat.Metrics, brkGetter *BrkGetter) grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		brk := brkGetter.Get(info.FullMethod)
 		// breaker logic
 		promise, err := brk.Allow()
 		if err != nil {
 			metrics.AddDrop()
-			level.Error(logger).Log("component", "grpc/breaker", "msg", "[grpc] dropped", "type", "stream", "method", info.FullMethod)
+			logger.Error("[grpc] dropped", zap.String("type", "stream"), zap.String("method", info.FullMethod))
 			return status.Errorf(codes.ResourceExhausted, "%s is rejected by grpc_breaker middleware, please retry later.", info.FullMethod)
 		}
 

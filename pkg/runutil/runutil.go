@@ -55,8 +55,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
+	"github.com/zcong1993/x/pkg/log"
+	"go.uber.org/zap"
+
 	"github.com/pkg/errors"
 )
 
@@ -84,7 +85,7 @@ func Retry(interval time.Duration, stopC <-chan struct{}, f func() error) error 
 }
 
 // RetryWithLog executes f every interval seconds until timeout or no error is returned from f. It logs an error on each f error.
-func RetryWithLog(logger log.Logger, interval time.Duration, stopC <-chan struct{}, f func() error) error {
+func RetryWithLog(logger *log.Logger, interval time.Duration, stopC <-chan struct{}, f func() error) error {
 	tick := time.NewTicker(interval)
 	defer tick.Stop()
 
@@ -93,7 +94,7 @@ func RetryWithLog(logger log.Logger, interval time.Duration, stopC <-chan struct
 		if err = f(); err == nil {
 			return nil
 		}
-		level.Error(logger).Log("msg", "function failed. Retrying in next tick", "err", err)
+		logger.Error("function failed. Retrying in next tick", zap.Error(err))
 		select {
 		case <-stopC:
 			return err
@@ -103,7 +104,7 @@ func RetryWithLog(logger log.Logger, interval time.Duration, stopC <-chan struct
 }
 
 // CloseWithLogOnErr is making sure we log every error, even those from best effort tiny closers.
-func CloseWithLogOnErr(logger log.Logger, closer io.Closer, format string, a ...interface{}) {
+func CloseWithLogOnErr(logger *log.Logger, closer io.Closer, format string, a ...interface{}) {
 	err := closer.Close()
 	if err == nil {
 		return
@@ -114,9 +115,5 @@ func CloseWithLogOnErr(logger log.Logger, closer io.Closer, format string, a ...
 		return
 	}
 
-	if logger == nil {
-		logger = log.NewLogfmtLogger(os.Stderr)
-	}
-
-	level.Warn(logger).Log("msg", "detected close error", "err", errors.Wrap(err, fmt.Sprintf(format, a...)))
+	logger.Warn("detected close error", zap.Error(errors.Wrap(err, fmt.Sprintf(format, a...))))
 }

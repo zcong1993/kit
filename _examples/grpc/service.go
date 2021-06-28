@@ -6,9 +6,10 @@ import (
 	"io"
 	"time"
 
+	"github.com/zcong1993/x/pkg/log"
+
 	oteltracing "github.com/zcong1993/x/pkg/tracing/otel"
 
-	"github.com/go-kit/kit/log"
 	"github.com/zcong1993/x/pkg/server/extgrpc"
 	"google.golang.org/grpc"
 
@@ -24,7 +25,7 @@ import (
 
 type helloService struct {
 	pb.UnimplementedHelloServer
-	logger log.Logger
+	logger *log.Logger
 }
 
 func req2res(req *pb.HelloRequest) *pb.HelloResponse {

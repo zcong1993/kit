@@ -4,10 +4,11 @@ import (
 	"context"
 	"net"
 
+	"github.com/zcong1993/x/pkg/log"
+	"go.uber.org/zap"
+
 	"github.com/oklog/run"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/pkg/errors"
 	"github.com/zcong1993/x/pkg/prober"
 	"google.golang.org/grpc"
@@ -17,7 +18,7 @@ import (
 )
 
 type Server struct {
-	logger log.Logger
+	logger *log.Logger
 
 	srv      *grpc.Server
 	listener net.Listener
@@ -25,8 +26,8 @@ type Server struct {
 	opts Options
 }
 
-func NewServer(logger log.Logger, probe *prober.GRPCProbe, opts ...Option) *Server {
-	logger = log.With(logger, "service", "gRPC/server")
+func NewServer(logger *log.Logger, probe *prober.GRPCProbe, opts ...Option) *Server {
+	logger = logger.With(log.Service("gRPC/server"))
 	options := Options{
 		network: "tcp",
 	}
@@ -73,19 +74,18 @@ func (s *Server) ListenAndServe() error {
 		return errors.Wrapf(err, "listen gRPC on address %s", s.opts.listen)
 	}
 	s.listener = l
-
-	level.Info(s.logger).Log("msg", "listening for serving gRPC", "address", s.opts.listen)
+	s.logger.Info("listening for serving gRPC", zap.String("address", s.opts.listen))
 	return errors.Wrap(s.srv.Serve(s.listener), "serve gRPC")
 }
 
 // Shutdown gracefully shuts down the server by waiting,
 // for specified amount of time (by gracePeriod) for connections to return to idle and then shut down.
 func (s *Server) Shutdown(err error) {
-	level.Info(s.logger).Log("msg", "internal server is shutting down", "err", err)
+	s.logger.Info("internal server is shutting down", log.ErrorMsg(err))
 
 	if s.opts.gracePeriod == 0 {
 		s.srv.Stop()
-		level.Info(s.logger).Log("msg", "internal server is shutdown", "err", err)
+		s.logger.Info("internal server is shutdown", log.ErrorMsg(err))
 		return
 	}
 
@@ -94,20 +94,20 @@ func (s *Server) Shutdown(err error) {
 
 	stopped := make(chan struct{})
 	go func() {
-		level.Info(s.logger).Log("msg", "gracefully stopping internal server")
+		s.logger.Info("gracefully stopping internal server")
 		s.srv.GracefulStop() // Also closes s.listener.
 		close(stopped)
 	}()
 
 	select {
 	case <-ctx.Done():
-		level.Info(s.logger).Log("msg", "grace period exceeded enforcing shutdown")
+		s.logger.Info("grace period exceeded enforcing shutdown")
 		s.srv.Stop()
 		return
 	case <-stopped:
 		cancel()
 	}
-	level.Info(s.logger).Log("msg", "internal server is shutdown gracefully", "err", err)
+	s.logger.Info("internal server is shutdown gracefully", log.ErrorMsg(err))
 }
 
 func (s *Server) Run(g *run.Group, statusProber prober.Probe) {

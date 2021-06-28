@@ -9,17 +9,18 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/zcong1993/x/pkg/log"
+	"go.uber.org/zap"
+
 	"github.com/gin-gonic/gin"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
 )
 
 // HTTPMiddleware returns an HTTP handler that injects the given tracer and starts a new server span.
 // If any client span is fetched from the wire, we include that as our parent.
-func HTTPMiddleware(tracer opentracing.Tracer, name string, logger log.Logger, next http.Handler) http.HandlerFunc {
+func HTTPMiddleware(tracer opentracing.Tracer, name string, logger *log.Logger, next http.Handler) http.HandlerFunc {
 	operationName := fmt.Sprintf("/%s HTTP[server]", name)
 
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -29,7 +30,7 @@ func HTTPMiddleware(tracer opentracing.Tracer, name string, logger log.Logger, n
 			opentracing.HTTPHeadersCarrier(r.Header),
 		)
 		if err != nil && err != opentracing.ErrSpanContextNotFound {
-			level.Error(logger).Log("msg", "failed to extract tracer from request", "operationName", operationName, "err", err)
+			logger.Error("failed to extract tracer from request", zap.String("operationName", operationName), zap.Error(err))
 		}
 
 		span = tracer.StartSpan(operationName, ext.RPCServerOption(wireContext))
@@ -52,7 +53,7 @@ func HTTPMiddleware(tracer opentracing.Tracer, name string, logger log.Logger, n
 	}
 }
 
-func GinMiddleware(tracer opentracing.Tracer, name string, logger log.Logger) gin.HandlerFunc {
+func GinMiddleware(tracer opentracing.Tracer, name string, logger *log.Logger) gin.HandlerFunc {
 	operationName := fmt.Sprintf("/%s HTTP[server]", name)
 
 	return func(c *gin.Context) {
@@ -63,7 +64,7 @@ func GinMiddleware(tracer opentracing.Tracer, name string, logger log.Logger) gi
 			opentracing.HTTPHeadersCarrier(r.Header),
 		)
 		if err != nil && err != opentracing.ErrSpanContextNotFound {
-			level.Error(logger).Log("msg", "failed to extract tracer from request", "operationName", operationName, "err", err)
+			logger.Error("failed to extract tracer from request", zap.String("operationName", operationName), zap.Error(err))
 		}
 
 		span = tracer.StartSpan(operationName, ext.RPCServerOption(wireContext))
@@ -88,7 +89,7 @@ func GinMiddleware(tracer opentracing.Tracer, name string, logger log.Logger) gi
 }
 
 type tripperware struct {
-	logger log.Logger
+	logger *log.Logger
 	next   http.RoundTripper
 }
 
@@ -96,7 +97,7 @@ func (t *tripperware) RoundTrip(r *http.Request) (*http.Response, error) {
 	tracer := tracerFromContext(r.Context())
 	if tracer == nil {
 		// No tracer, programmatic mistake.
-		level.Warn(t.logger).Log("msg", "Tracer not found in context.")
+		t.logger.Warn("Tracer not found in context.")
 		return t.next.RoundTrip(r)
 	}
 
@@ -124,7 +125,7 @@ func (t *tripperware) RoundTrip(r *http.Request) (*http.Response, error) {
 		opentracing.HTTPHeaders,
 		opentracing.HTTPHeadersCarrier(r.Header),
 	); err != nil {
-		level.Warn(t.logger).Log("msg", "failed to inject trace", "err", err)
+		t.logger.Warn("failed to inject trace", zap.Error(err))
 	}
 
 	resp, err := t.next.RoundTrip(r)
@@ -133,7 +134,7 @@ func (t *tripperware) RoundTrip(r *http.Request) (*http.Response, error) {
 
 // HTTPTripperware returns HTTP tripper that assumes given span in context as client child span and injects it into the wire.
 // NOTE: It assumes tracer is given in request context. Also, it is caller responsibility to finish span.
-func HTTPTripperware(logger log.Logger, next http.RoundTripper) http.RoundTripper {
+func HTTPTripperware(logger *log.Logger, next http.RoundTripper) http.RoundTripper {
 	return &tripperware{
 		logger: logger,
 		next:   next,
@@ -149,7 +150,7 @@ func (t *autotripperware) RoundTrip(r *http.Request) (*http.Response, error) {
 	tracer := tracerFromContext(r.Context())
 	if tracer == nil {
 		// No tracer, programmatic mistake.
-		level.Warn(t.logger).Log("msg", "Tracer not found in context.")
+		t.logger.Warn("Tracer not found in context.")
 		return t.next.RoundTrip(r)
 	}
 
@@ -181,7 +182,7 @@ func (t *autotripperware) RoundTrip(r *http.Request) (*http.Response, error) {
 		opentracing.HTTPHeaders,
 		opentracing.HTTPHeadersCarrier(r.Header),
 	); err != nil {
-		level.Warn(t.logger).Log("msg", "failed to inject trace", "err", err)
+		t.logger.Warn("failed to inject trace", zap.Error(err))
 	}
 
 	resp, err := t.next.RoundTrip(r)

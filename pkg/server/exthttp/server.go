@@ -5,17 +5,17 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/zcong1993/x/pkg/log"
+	"go.uber.org/zap"
+
 	"github.com/oklog/run"
 	"github.com/zcong1993/x/pkg/prober"
-
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
 )
 
 type HttpServer struct {
 	handler http.Handler
 	srv     *http.Server
-	logger  log.Logger
+	logger  *log.Logger
 	option  *Option
 }
 
@@ -45,14 +45,14 @@ func WithServiceName(name string) OptionFunc {
 	}
 }
 
-func NewHttpServer(handler http.Handler, logger log.Logger, opts ...OptionFunc) *HttpServer {
+func NewHttpServer(handler http.Handler, logger *log.Logger, opts ...OptionFunc) *HttpServer {
 	option := &Option{
 		service: "http/server",
 	}
 	for _, f := range opts {
 		f(option)
 	}
-	return &HttpServer{handler: handler, logger: log.With(logger, "service", option.service), option: option}
+	return &HttpServer{handler: handler, logger: logger.With(log.Service(option.service)), option: option}
 }
 
 func (hs *HttpServer) Start() error {
@@ -61,20 +61,20 @@ func (hs *HttpServer) Start() error {
 		Handler: hs.handler,
 	}
 	hs.srv = srv
-	level.Info(hs.logger).Log("msg", "listening for requests", "address", hs.option.listen)
+	hs.logger.Sugar().Infow("listening for requests", "address", hs.option.listen)
 	return srv.ListenAndServe()
 }
 
 func (hs *HttpServer) Shutdown(err error) {
-	level.Info(hs.logger).Log("msg", "internal server is shutting down", "err", err)
+	hs.logger.Info("internal server is shutting down", log.ErrorMsg(err))
 	if err == http.ErrServerClosed {
-		level.Warn(hs.logger).Log("msg", "internal server closed unexpectedly")
+		hs.logger.Warn("internal server closed unexpectedly")
 		return
 	}
 
 	if hs.option.gracePeriod == 0 {
 		hs.srv.Close()
-		level.Info(hs.logger).Log("msg", "internal server is shutdown", "err", err)
+		hs.logger.Info("internal server is shutdown", log.ErrorMsg(err))
 		return
 	}
 
@@ -82,10 +82,11 @@ func (hs *HttpServer) Shutdown(err error) {
 	defer cancel()
 
 	if err := hs.srv.Shutdown(ctx); err != nil {
-		level.Error(hs.logger).Log("msg", "internal server shut down failed", "err", err)
+		hs.logger.Error("internal server shut down failed", zap.Error(err))
 		return
 	}
-	level.Info(hs.logger).Log("msg", "internal server is shutdown gracefully", "err", err)
+
+	hs.logger.Info("internal server is shutdown gracefully", log.ErrorMsg(err))
 }
 
 func (hs *HttpServer) Run(g *run.Group, statusProber prober.Probe) {

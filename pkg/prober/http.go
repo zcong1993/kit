@@ -7,8 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
+	"github.com/zcong1993/x/pkg/log"
 	"go.uber.org/atomic"
 )
 
@@ -26,23 +25,23 @@ func NewHTTP() *HTTPProbe {
 }
 
 // HealthyHandler returns a HTTP Handler which responds health checks.
-func (p *HTTPProbe) HealthyHandler(logger log.Logger) http.HandlerFunc {
+func (p *HTTPProbe) HealthyHandler(logger *log.Logger) http.HandlerFunc {
 	return p.handler(logger, p.isHealthy)
 }
 
 // ReadyHandler returns a HTTP Handler which responds readiness checks.
-func (p *HTTPProbe) ReadyHandler(logger log.Logger) http.HandlerFunc {
+func (p *HTTPProbe) ReadyHandler(logger *log.Logger) http.HandlerFunc {
 	return p.handler(logger, p.isReady)
 }
 
-func (p *HTTPProbe) handler(logger log.Logger, c check) http.HandlerFunc {
+func (p *HTTPProbe) handler(logger *log.Logger, c check) http.HandlerFunc {
 	return func(w http.ResponseWriter, _ *http.Request) {
 		if !c() {
 			http.Error(w, "NOT OK", http.StatusServiceUnavailable)
 			return
 		}
 		if _, err := io.WriteString(w, "OK"); err != nil {
-			level.Error(logger).Log("msg", "failed to write probe response", "err", err)
+			logger.Error("failed to write probe response", log.ErrorMsg(err))
 		}
 	}
 }

@@ -3,7 +3,6 @@ package extapp
 import (
 	"time"
 
-	"github.com/go-kit/kit/log/level"
 	"github.com/spf13/cobra"
 	"github.com/zcong1993/x/pkg/server/exthttp"
 )
@@ -42,7 +41,7 @@ func registerInnerHttp(app *App, cmd *cobra.Command) innerHttpFactory {
 		profileServer := exthttp.NewMuxServer(app.Logger, exthttp.WithListen(app.innerHttpOptions.addr), exthttp.WithServiceName("metrics/profiler"), exthttp.WithGracePeriod(app.innerHttpOptions.gracePeriod))
 
 		if app.innerHttpOptions.withPprof {
-			level.Info(app.Logger).Log("msg", "register pprof routes")
+			app.Logger.Info("register pprof routes")
 			profileServer.RegisterProfiler()
 		}
 

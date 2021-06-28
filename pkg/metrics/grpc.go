@@ -4,8 +4,9 @@ import (
 	"runtime/debug"
 	"sync"
 
-	"github.com/go-kit/kit/log"
-	"github.com/go-kit/kit/log/level"
+	"github.com/zcong1993/x/pkg/log"
+	"go.uber.org/zap"
+
 	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/prometheus/client_golang/prometheus"
@@ -23,7 +24,7 @@ var (
 	serverOnce sync.Once
 )
 
-func WithServerMetrics(logger log.Logger, reg prometheus.Registerer) extgrpc.Option {
+func WithServerMetrics(logger *log.Logger, reg prometheus.Registerer) extgrpc.Option {
 	if reg == nil {
 		return extgrpc.NoopOption()
 	}
@@ -35,7 +36,7 @@ func WithServerMetrics(logger log.Logger, reg prometheus.Registerer) extgrpc.Opt
 
 	grpcPanicRecoveryHandler := func(p interface{}) (err error) {
 		panicsTotal.Inc()
-		level.Error(logger).Log("msg", "recovered from panic", "panic", p, "stack", debug.Stack())
+		logger.Error("recovered from panic", zap.Any("panic", p), zap.ByteString("stack", debug.Stack()))
 		return status.Errorf(codes.Internal, "%s", p)
 	}
 
