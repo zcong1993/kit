@@ -16,6 +16,7 @@ type Option struct {
 	LogEncoding string
 	Caller      bool
 	Prod        bool
+	level       zap.AtomicLevel
 }
 
 func DefaultLogger() (*Logger, error) {
@@ -48,8 +49,8 @@ func NewLogger(o *Option, opts ...zap.Option) (*Logger, error) {
 		opts = append(opts, zap.AddStacktrace(zap.ErrorLevel))
 	}
 
-	var level zap.AtomicLevel
-	err := level.UnmarshalText([]byte(o.LogLevel))
+	err := o.level.UnmarshalText([]byte(o.LogLevel))
+	config.Level = o.level
 
 	if err != nil {
 		return nil, errors.Wrap(err, "invalid log.level")
@@ -75,6 +76,10 @@ func (opt *Option) Register(app *cobra.Command) {
 
 func (opt *Option) CreateLogger(opts ...zap.Option) (*Logger, error) {
 	return NewLogger(opt, opts...)
+}
+
+func (opt *Option) GetLevel() zap.AtomicLevel {
+	return opt.level
 }
 
 func SyncOnClose(g *run.Group, logger *Logger) {

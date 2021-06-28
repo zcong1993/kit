@@ -64,6 +64,10 @@ func (ms *MuxServer) RegisterProber(p *prober.HTTPProbe) {
 	}
 }
 
+func (ms *MuxServer) RegisterLogControl(handler http.Handler) {
+	ms.mux.Handle("/log/level", handler)
+}
+
 func (ms *MuxServer) RunGroup(g *run.Group) {
 	g.Add(func() error {
 		return ms.Start()
