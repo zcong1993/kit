@@ -1,13 +1,17 @@
 #!/bin/bash
 set -e
 
-for example in $(ls ./_examples)
+cd _examples
+
+for example in $(ls .)
 do
-  if [[ "$example" != "otel" ]]; then
+  if [[ ! "$example" =~ go.(mod|sum)$ ]]; then
     echo "build $example"
-    go build -o "./bin/${example}" "./_examples/${example}"
+    go build -o "../bin/${example}" "./${example}"
   fi
 done
+
+cd ../
 
 #for example in $(ls ./_examples/otel)
 #do
