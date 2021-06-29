@@ -9,17 +9,10 @@ import (
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/prometheus/client_golang/prometheus"
 
-	"github.com/opentracing/opentracing-go"
-	"github.com/zcong1993/x/pkg/tracing"
 	"google.golang.org/grpc"
 )
 
 var once sync.Once
-
-// ClientGrpcOpts return return options with tracing and metrics.
-func ClientGrpcOpts(tracer opentracing.Tracer, reg prometheus.Registerer, secure bool) []grpc.DialOption {
-	return BuildOpts(reg, secure, []grpc.UnaryClientInterceptor{tracing.UnaryClientInterceptor(tracer)}, []grpc.StreamClientInterceptor{tracing.StreamClientInterceptor(tracer)})
-}
 
 func ClientOtelGrpcOpts(reg prometheus.Registerer, secure bool) []grpc.DialOption {
 	return BuildOpts(reg, secure, []grpc.UnaryClientInterceptor{oteltracing.UnaryClientInterceptor()}, []grpc.StreamClientInterceptor{oteltracing.StreamClientInterceptor()})

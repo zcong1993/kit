@@ -6,9 +6,6 @@ import (
 
 	oteltracing "github.com/zcong1993/x/pkg/tracing/otel"
 
-	"github.com/opentracing/opentracing-go"
-	"github.com/zcong1993/x/pkg/tracing"
-
 	"google.golang.org/grpc"
 )
 
@@ -86,14 +83,6 @@ func WithStreamServerInterceptor(interceptor grpc.StreamServerInterceptor) Optio
 	return func(o *Options) {
 		o.grpcStreamServerInterceptors = append(o.grpcStreamServerInterceptors, interceptor)
 	}
-}
-
-// WithServerTracing setup tracer middleware.
-func WithServerTracing(tracer opentracing.Tracer) Option {
-	return CombineOptions(
-		WithUnaryServerInterceptor(tracing.UnaryServerInterceptor(tracer)),
-		WithStreamServerInterceptor(tracing.StreamServerInterceptor(tracer)),
-	)
 }
 
 func WithOtelTracing() Option {
