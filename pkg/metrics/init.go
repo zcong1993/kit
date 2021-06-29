@@ -3,6 +3,8 @@ package metrics
 import (
 	"sync"
 
+	"github.com/prometheus/client_golang/prometheus/collectors"
+
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -14,8 +16,8 @@ func InitMetrics() *prometheus.Registry {
 
 	once.Do(func() {
 		me.MustRegister(
-			prometheus.NewGoCollector(),
-			prometheus.NewProcessCollector(prometheus.ProcessCollectorOpts{}),
+			collectors.NewGoCollector(),
+			collectors.NewProcessCollector(collectors.ProcessCollectorOpts{}),
 		)
 	})
 
