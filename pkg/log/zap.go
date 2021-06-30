@@ -9,16 +9,24 @@ import (
 	"go.uber.org/zap"
 )
 
+// Logger is type alias for zap.Logger.
 type Logger = zap.Logger
 
+// Option is Logger options.
 type Option struct {
-	LogLevel    string
+	// LogLevel is zap logger level.
+	LogLevel string
+	// LogEncoding is zap LogEncoding.
 	LogEncoding string
-	Caller      bool
-	Prod        bool
-	level       zap.AtomicLevel
+	// Caller control if add caller to log.
+	Caller bool
+	// Prod if true use zap production preset.
+	Prod bool
+	// level store zap AtomicLevel for register http control router.
+	level zap.AtomicLevel
 }
 
+// DefaultLogger create a default logger, if helpful before logger init.
 func DefaultLogger() (*Logger, error) {
 	defaultOption := &Option{
 		LogLevel:    "info",
@@ -29,8 +37,10 @@ func DefaultLogger() (*Logger, error) {
 	return NewLogger(defaultOption)
 }
 
+// NewNopLogger is alias for zap.NewNop.
 var NewNopLogger = zap.NewNop
 
+// NewLogger create a zap logger by option.
 func NewLogger(o *Option, opts ...zap.Option) (*Logger, error) {
 	var config zap.Config
 
@@ -65,6 +75,7 @@ func NewLogger(o *Option, opts ...zap.Option) (*Logger, error) {
 	return config.Build(opts...)
 }
 
+// Register register flags to cobra global flag set.
 func (opt *Option) Register(app *cobra.Command) {
 	f := app.PersistentFlags()
 
@@ -74,14 +85,17 @@ func (opt *Option) Register(app *cobra.Command) {
 	f.BoolVar(&opt.Prod, "log.prod", false, "If use zap log production preset")
 }
 
+// CreateLogger create zap logger from self option.
 func (opt *Option) CreateLogger(opts ...zap.Option) (*Logger, error) {
 	return NewLogger(opt, opts...)
 }
 
+// GetLevel get inner zap AtomicLevel.
 func (opt *Option) GetLevel() zap.AtomicLevel {
 	return opt.level
 }
 
+// SyncOnClose call log.Sync before run group exit.
 func SyncOnClose(g *run.Group, logger *Logger) {
 	ctx, cancel := context.WithCancel(context.Background())
 	g.Add(func() error {
