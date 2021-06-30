@@ -25,6 +25,8 @@ const (
 	samplerArgKey      = "OTEL_TRACES_SAMPLER_ARG"
 )
 
+// initExporter init exporter by env
+// only support jaeger now.
 func initExporter() (trace.SpanExporter, error) {
 	exporterType := os.Getenv(exporterTypekey)
 	if exporterType != exporterTypeJaeger {
@@ -45,6 +47,7 @@ func getSamplerArg() (float64, error) {
 	return strconv.ParseFloat(arg, 64)
 }
 
+// initSampler create a sampler by env.
 func initSampler() (trace.Sampler, error) {
 	samplerType := os.Getenv(samplerTypeKey)
 
@@ -74,6 +77,7 @@ func initSampler() (trace.Sampler, error) {
 	}
 }
 
+// InitTracerFromEnv init opentelemetry tracer by env.
 func InitTracerFromEnv(logger *log.Logger, serviceName string, attrs ...attribute.KeyValue) error {
 	c := log.Component("otel-tracing")
 	if os.Getenv(exporterTypekey) == "" {

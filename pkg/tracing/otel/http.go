@@ -6,8 +6,11 @@ import (
 )
 
 var (
-	GinMiddleware  = otelgin.Middleware
+	// GinMiddleware is alias for otelgin.Middleware.
+	GinMiddleware = otelgin.Middleware
+	// HTTPMiddleware is alias for telhttp.NewHandler.
 	HTTPMiddleware = otelhttp.NewHandler
 )
 
+// HttpTransport is alias for otelhttp.NewTransport.
 var HttpTransport = otelhttp.NewTransport
