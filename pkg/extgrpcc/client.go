@@ -14,10 +14,12 @@ import (
 
 var once sync.Once
 
+// ClientOtelGrpcOpts return grpc.DialOption with opentelemetry tracing client interceptors.
 func ClientOtelGrpcOpts(reg prometheus.Registerer, secure bool) []grpc.DialOption {
 	return BuildOpts(reg, secure, []grpc.UnaryClientInterceptor{oteltracing.UnaryClientInterceptor()}, []grpc.StreamClientInterceptor{oteltracing.StreamClientInterceptor()})
 }
 
+// BuildOpts if helper function for building grpc client DialOptions.
 func BuildOpts(reg prometheus.Registerer, secure bool, unaryClientInterceptors []grpc.UnaryClientInterceptor, streamClientInterceptors []grpc.StreamClientInterceptor) []grpc.DialOption {
 	grpcMets := grpc_prometheus.NewClientMetrics()
 	grpcMets.EnableClientHandlingTimeHistogram(
