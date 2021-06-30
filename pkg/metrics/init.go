@@ -11,6 +11,7 @@ import (
 var once sync.Once
 
 // InitMetrics 不要使用默认 register, 太容易产生冲突.
+// InitMetrics create a clean prometheus Registry to avoid conflicts.
 func InitMetrics() *prometheus.Registry {
 	me := prometheus.NewRegistry()
 

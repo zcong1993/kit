@@ -45,6 +45,7 @@ var (
 	)
 )
 
+// NewInstrumentationMiddleware create a metrics gin middleware.
 func NewInstrumentationMiddleware(reg prometheus.Registerer) gin.HandlerFunc {
 	if reg != nil {
 		httpOnce.Do(func() {

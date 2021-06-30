@@ -24,6 +24,7 @@ var (
 	serverOnce sync.Once
 )
 
+// WithServerMetrics create metrics interceptors for grpc server.
 func WithServerMetrics(logger *log.Logger, reg prometheus.Registerer) extgrpc.Option {
 	if reg == nil {
 		return extgrpc.NoopOption()
