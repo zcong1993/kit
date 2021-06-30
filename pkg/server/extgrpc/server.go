@@ -17,6 +17,7 @@ import (
 	"google.golang.org/grpc/reflection"
 )
 
+// Server is our extgrpc server.
 type Server struct {
 	logger *log.Logger
 
@@ -26,6 +27,7 @@ type Server struct {
 	opts Options
 }
 
+// NewServer crate a new Server instance.
 func NewServer(logger *log.Logger, probe *prober.GRPCProbe, opts ...Option) *Server {
 	logger = logger.With(log.Service("gRPC/server"))
 	options := Options{
@@ -68,6 +70,7 @@ func NewServer(logger *log.Logger, probe *prober.GRPCProbe, opts ...Option) *Ser
 	}
 }
 
+// ListenAndServe listen and serve grpc server.
 func (s *Server) ListenAndServe() error {
 	l, err := net.Listen(s.opts.network, s.opts.listen)
 	if err != nil {
@@ -110,6 +113,7 @@ func (s *Server) Shutdown(err error) {
 	s.logger.Info("internal server is shutdown gracefully", log.ErrorMsg(err))
 }
 
+// Run start grpc server with run group.
 func (s *Server) Run(g *run.Group, statusProber prober.Probe) {
 	g.Add(func() error {
 		statusProber.Healthy()

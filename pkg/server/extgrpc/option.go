@@ -9,6 +9,7 @@ import (
 	"google.golang.org/grpc"
 )
 
+// Options is extgrpc server options.
 type Options struct {
 	registerServerFuncs []registerServerFunc
 
@@ -24,10 +25,11 @@ type Options struct {
 	grpcStreamServerInterceptors []grpc.StreamServerInterceptor
 }
 
+// Option is option function.
 type Option = func(o *Options)
 type registerServerFunc func(s *grpc.Server)
 
-// WithGRPCServer calls the passed gRPC registration functions on the created
+// WithServer calls the passed gRPC registration functions on the created
 // grpc.Server.
 func WithServer(f registerServerFunc) Option {
 	return func(o *Options) {
@@ -73,18 +75,21 @@ func WithTLSConfig(cfg *tls.Config) Option {
 	}
 }
 
+// WithUnaryServerInterceptor append a grpc UnaryServerInterceptor.
 func WithUnaryServerInterceptor(interceptor grpc.UnaryServerInterceptor) Option {
 	return func(o *Options) {
 		o.grpcUnaryServerInterceptors = append(o.grpcUnaryServerInterceptors, interceptor)
 	}
 }
 
+// WithStreamServerInterceptor append a grpc StreamServerInterceptor.
 func WithStreamServerInterceptor(interceptor grpc.StreamServerInterceptor) Option {
 	return func(o *Options) {
 		o.grpcStreamServerInterceptors = append(o.grpcStreamServerInterceptors, interceptor)
 	}
 }
 
+// WithOtelTracing append opentelemetry interceptors.
 func WithOtelTracing() Option {
 	return CombineOptions(
 		WithUnaryServerInterceptor(oteltracing.UnaryServerInterceptor()),
@@ -92,6 +97,7 @@ func WithOtelTracing() Option {
 	)
 }
 
+// CombineOptions combine multi Option into one.
 func CombineOptions(options ...Option) Option {
 	return func(o *Options) {
 		for _, f := range options {
@@ -100,6 +106,7 @@ func CombineOptions(options ...Option) Option {
 	}
 }
 
+// NoopOption return a nop option.
 func NoopOption() Option {
 	return func(o *Options) {}
 }

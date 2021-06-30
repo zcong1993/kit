@@ -16,11 +16,13 @@ import (
 
 // MuxServer 简单的 http mux server
 // 一般用来挂载 prometheus 和 pprof.
+// MuxServer is a simple http mux server.
 type MuxServer struct {
 	*HttpServer
 	mux *http.ServeMux
 }
 
+// NewMuxServer crate a new MuxServer instance.
 func NewMuxServer(logger *log.Logger, opts ...OptionFunc) *MuxServer {
 	mux := http.NewServeMux()
 	return &MuxServer{
@@ -29,14 +31,17 @@ func NewMuxServer(logger *log.Logger, opts ...OptionFunc) *MuxServer {
 	}
 }
 
+// HandleFunc add handle function to mux server.
 func (ms *MuxServer) HandleFunc(pattern string, handler func(http.ResponseWriter, *http.Request)) {
 	ms.mux.HandleFunc(pattern, handler)
 }
 
+// Handle add handler to mux server.
 func (ms *MuxServer) Handle(pattern string, handler http.Handler) {
 	ms.mux.Handle(pattern, handler)
 }
 
+// RegisterProfiler register pprof routes.
 func (ms *MuxServer) RegisterProfiler() {
 	ms.logger.Info("register profiler")
 	ms.mux.HandleFunc("/debug/pprof/", pprof.Index)
@@ -47,6 +52,7 @@ func (ms *MuxServer) RegisterProfiler() {
 	ms.mux.Handle("/debug/fgprof", fgprof.Handler())
 }
 
+// RegisterMetrics register metrics route.
 func (ms *MuxServer) RegisterMetrics(g prometheus.Gatherer) {
 	if g != nil {
 		ms.logger.Info("register prometheus gatherer")
@@ -57,6 +63,7 @@ func (ms *MuxServer) RegisterMetrics(g prometheus.Gatherer) {
 	}
 }
 
+// RegisterProber register liveness(healthy) and readiness(ready) routes.
 func (ms *MuxServer) RegisterProber(p *prober.HTTPProbe) {
 	if p != nil {
 		ms.mux.Handle("/-/healthy", p.HealthyHandler(ms.logger))
@@ -64,10 +71,12 @@ func (ms *MuxServer) RegisterProber(p *prober.HTTPProbe) {
 	}
 }
 
+// RegisterLogControl register log level control routes.
 func (ms *MuxServer) RegisterLogControl(handler http.Handler) {
 	ms.mux.Handle("/log/level", handler)
 }
 
+// RunGroup start server with run group.
 func (ms *MuxServer) RunGroup(g *run.Group) {
 	g.Add(func() error {
 		return ms.Start()

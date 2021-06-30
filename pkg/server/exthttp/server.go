@@ -12,6 +12,7 @@ import (
 	"github.com/zcong1993/kit/pkg/prober"
 )
 
+// HttpServer is our exthttp server.
 type HttpServer struct {
 	handler http.Handler
 	srv     *http.Server
@@ -19,32 +20,38 @@ type HttpServer struct {
 	option  *Option
 }
 
+// Option is server options.
 type Option struct {
 	gracePeriod time.Duration
 	listen      string
 	service     string
 }
 
+// OptionFunc is option handler type.
 type OptionFunc func(option *Option)
 
+// WithGracePeriod set grace shutdown period option.
 func WithGracePeriod(gracePeriod time.Duration) OptionFunc {
 	return func(o *Option) {
 		o.gracePeriod = gracePeriod
 	}
 }
 
+// WithListen set the listen option.
 func WithListen(listen string) OptionFunc {
 	return func(o *Option) {
 		o.listen = listen
 	}
 }
 
+// WithServiceName set the service option.
 func WithServiceName(name string) OptionFunc {
 	return func(o *Option) {
 		o.service = name
 	}
 }
 
+// NewHttpServer create a new HttpServer instance.
 func NewHttpServer(handler http.Handler, logger *log.Logger, opts ...OptionFunc) *HttpServer {
 	option := &Option{
 		service: "http/server",
@@ -55,6 +62,7 @@ func NewHttpServer(handler http.Handler, logger *log.Logger, opts ...OptionFunc)
 	return &HttpServer{handler: handler, logger: logger.With(log.Service(option.service)), option: option}
 }
 
+// Start listen and serve http server.
 func (hs *HttpServer) Start() error {
 	srv := &http.Server{
 		Addr:    hs.option.listen,
@@ -65,6 +73,8 @@ func (hs *HttpServer) Start() error {
 	return srv.ListenAndServe()
 }
 
+// Shutdown shutdown the http server
+// if gracePeriod set, it will shutdown gracefully.
 func (hs *HttpServer) Shutdown(err error) {
 	hs.logger.Info("internal server is shutting down", log.ErrorMsg(err))
 	if err == http.ErrServerClosed {
@@ -89,6 +99,7 @@ func (hs *HttpServer) Shutdown(err error) {
 	hs.logger.Info("internal server is shutdown gracefully", log.ErrorMsg(err))
 }
 
+// Run start http server with run group.
 func (hs *HttpServer) Run(g *run.Group, statusProber prober.Probe) {
 	g.Add(func() error {
 		statusProber.Healthy()
