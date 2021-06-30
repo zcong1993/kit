@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// WithGrpcServerBreaker create breaker option based on command line parameters.
 func WithGrpcServerBreaker(logger *log.Logger, opt *Option) extgrpc.Option {
 	logger = logger.With(log.Component("grpc/shedder"))
 	if opt.disable {

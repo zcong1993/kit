@@ -13,6 +13,7 @@ import (
 
 const breakerSeparator = "://"
 
+// RegisterGinBreaker register breaker middleware based on command line parameters.
 func RegisterGinBreaker(r *gin.Engine, logger *log.Logger, opt *Option) {
 	logger = logger.With(log.Component("http/breaker"))
 	if opt.disable {
@@ -23,6 +24,7 @@ func RegisterGinBreaker(r *gin.Engine, logger *log.Logger, opt *Option) {
 	r.Use(GinBreakerMiddleware(logger))
 }
 
+// GinBreakerMiddleware create a gin middleware.
 func GinBreakerMiddleware(logger *log.Logger) gin.HandlerFunc {
 	zero.SetupMetrics()
 	metrics := zero.Metrics
