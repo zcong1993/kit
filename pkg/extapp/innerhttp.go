@@ -33,12 +33,12 @@ type innerHttpFactory = func() *exthttp.MuxServer
 func registerInnerHttp(app *App, cmd *cobra.Command) innerHttpFactory {
 	f := cmd.PersistentFlags()
 
-	f.BoolVar(&app.innerHttpOptions.withPprof, withPprof, false, "If enable pprof routes, /debug/pprof/*.")
-	f.BoolVar(&app.innerHttpOptions.withMetrics, withMetrics, true, "If expose metrics router, /metrics.")
-	f.StringVar(&app.innerHttpOptions.addr, addr, ":6060", "Inner metrics/pprof http server addr.")
-	f.BoolVar(&app.innerHttpOptions.disable, disable, false, "If disable inner http server.")
-	f.DurationVar(&app.innerHttpOptions.gracePeriod, gracePeriod, 0, "Inner http exit grace period.")
-	f.BoolVar(&app.innerHttpOptions.withLogControl, withLogControl, false, "If enable logger level control, GET PUT /log/level.")
+	f.BoolVar(&app.innerHttpOptions.withPprof, withPprof, false, "If enable pprof routes, /debug/pprof/*")
+	f.BoolVar(&app.innerHttpOptions.withMetrics, withMetrics, true, "If expose metrics router, /metrics")
+	f.StringVar(&app.innerHttpOptions.addr, addr, ":6060", "Inner metrics/pprof http server addr")
+	f.BoolVar(&app.innerHttpOptions.disable, disable, false, "If disable inner http server")
+	f.DurationVar(&app.innerHttpOptions.gracePeriod, gracePeriod, 0, "Inner http exit grace period")
+	f.BoolVar(&app.innerHttpOptions.withLogControl, withLogControl, false, "If enable logger level control, GET PUT /log/level")
 
 	return func() *exthttp.MuxServer {
 		profileServer := exthttp.NewMuxServer(app.Logger, exthttp.WithListen(app.innerHttpOptions.addr), exthttp.WithServiceName("metrics/profiler"), exthttp.WithGracePeriod(app.innerHttpOptions.gracePeriod))

@@ -10,7 +10,7 @@ import (
 
 const (
 	disableBreaker = "breaker.disable"
-	helpText       = "If disable breaker."
+	helpText       = "If disable breaker"
 )
 
 type OptionFactory = func() *Option

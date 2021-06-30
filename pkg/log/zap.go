@@ -68,7 +68,7 @@ func NewLogger(o *Option, opts ...zap.Option) (*Logger, error) {
 func (opt *Option) Register(app *cobra.Command) {
 	f := app.PersistentFlags()
 
-	f.StringVar(&opt.LogLevel, "log.level", "info", "Log level, one of debug info warn error")
+	f.StringVar(&opt.LogLevel, "log.level", "info", "Log level, one of zap level")
 	f.StringVar(&opt.LogEncoding, "log.encoding", "", "Zap log encoding, console json or others you registered")
 	f.BoolVar(&opt.Caller, "log.caller", false, "If with caller field")
 	f.BoolVar(&opt.Prod, "log.prod", false, "If use zap log production preset")
