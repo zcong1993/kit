@@ -23,22 +23,3 @@ type Probe interface {
 	Ready()
 	NotReady(err error)
 }
-
-type NopProber struct {
-}
-
-func (np *NopProber) Healthy() {
-
-}
-
-func (np *NopProber) NotHealthy(err error) {
-
-}
-
-func (np *NopProber) Ready() {
-
-}
-
-func (np *NopProber) NotReady(err error) {
-
-}
