@@ -10,6 +10,7 @@ import (
 	"github.com/zcong1993/kit/pkg/zero"
 )
 
+// RegisterGinShedder register shedder middleware based on command line parameters.
 func RegisterGinShedder(r *gin.Engine, shedder load.Shedder, logger *log.Logger) {
 	logger = logger.With(log.Component("http/shedder"))
 	if shedder == nil {
@@ -20,6 +21,7 @@ func RegisterGinShedder(r *gin.Engine, shedder load.Shedder, logger *log.Logger)
 	r.Use(GinShedderMiddleware(shedder, logger))
 }
 
+// GinShedderMiddleware create a gin middleware.
 func GinShedderMiddleware(shedder load.Shedder, logger *log.Logger) gin.HandlerFunc {
 	// noop middleware
 	if shedder == nil {

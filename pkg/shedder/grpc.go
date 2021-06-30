@@ -16,6 +16,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// WithGrpcShedder create shedder option based on command line parameters.
 func WithGrpcShedder(logger *log.Logger, shedder load.Shedder) extgrpc.Option {
 	logger = logger.With(log.Component("grpc/shedder"))
 	// noop middleware

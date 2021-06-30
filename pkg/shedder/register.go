@@ -10,8 +10,10 @@ const (
 	helpText            = "CpuThreshold config for adaptive shedder, set 0 to disable"
 )
 
+// Factory is shedder factory.
 type Factory = func() load.Shedder
 
+// Register register the shedder option into cobra global flag set.
 func Register(app *cobra.Command) Factory {
 	var cpuThreshold int64
 
@@ -22,6 +24,7 @@ func Register(app *cobra.Command) Factory {
 	}
 }
 
+// NewShedder create a new shedder instance.
 func NewShedder(cpuThreshold int64) load.Shedder {
 	if cpuThreshold == 0 {
 		return nil
