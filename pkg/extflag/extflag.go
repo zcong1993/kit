@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/pflag"
 )
 
+// RegisterPathOrContent register two flags to get configuration from file or command line.
 func RegisterPathOrContent(flagSet *pflag.FlagSet, flagName string, help string) {
 	fileFlagName := fmt.Sprintf("%s-file", flagName)
 	contentFlagName := flagName
@@ -21,6 +22,7 @@ func RegisterPathOrContent(flagSet *pflag.FlagSet, flagName string, help string)
 	flagSet.String(contentFlagName, "", contentHelp)
 }
 
+// LoadContent can load content from registered flag.
 func LoadContent(cmd *cobra.Command, flagName string, required bool) ([]byte, error) {
 	contentFlagName := flagName
 	fileFlagName := fmt.Sprintf("%s-file", flagName)
