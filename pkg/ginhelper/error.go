@@ -58,14 +58,14 @@ func (e *BizError) Unwrap() error {
 // 2. ValidationErrors, return status: 400, and json error body
 // 3. other, return status 500 and json error body.
 func ReplyError(ctx *gin.Context, err error) {
-	// 业务错误
+	// 业务错误.
 	var bizError *BizError
 	if errors.As(err, &bizError) {
 		ctx.JSON(bizError.Status, bizError)
 		return
 	}
 
-	// gin binding 校验错误
+	// gin binding 校验错误.
 	var ve validator.ValidationErrors
 	if errors.As(err, &ve) {
 		// todo: 控制是否返回错误详情
@@ -77,7 +77,7 @@ func ReplyError(ctx *gin.Context, err error) {
 		return
 	}
 
-	// 其他错误
+	// 其他错误.
 	err1 := &BizError{
 		Code:    500,
 		Message: err.Error(),

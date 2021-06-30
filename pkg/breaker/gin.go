@@ -36,7 +36,7 @@ func GinBreakerMiddleware(logger *log.Logger) gin.HandlerFunc {
 
 	return func(c *gin.Context) {
 		fullPath := c.FullPath()
-		// 404
+		// 404.
 		if len(fullPath) == 0 {
 			c.Next()
 			return
@@ -44,7 +44,7 @@ func GinBreakerMiddleware(logger *log.Logger) gin.HandlerFunc {
 		key := strings.Join([]string{c.Request.Method, fullPath}, breakerSeparator)
 		brk := brkGetter.Get(key)
 
-		// breaker logic
+		// breaker logic.
 		promise, err := brk.Allow()
 		if err != nil {
 			metrics.AddDrop()

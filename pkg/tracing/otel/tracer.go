@@ -33,13 +33,15 @@ func initExporter() (trace.SpanExporter, error) {
 		return nil, errors.New("only support jaeger exporter now")
 	}
 
-	// Endpoint
+	// Endpoint.
 	if os.Getenv("OTEL_EXPORTER_JAEGER_ENDPOINT") != "" {
-		return jaeger.New(jaeger.WithCollectorEndpoint())
+		e, err := jaeger.New(jaeger.WithCollectorEndpoint())
+		return e, errors.Wrap(err, "jaeger new")
 	}
 
-	// agent
-	return jaeger.New(jaeger.WithAgentEndpoint())
+	// agent.
+	e, err := jaeger.New(jaeger.WithAgentEndpoint())
+	return e, errors.Wrap(err, "jaeger new")
 }
 
 func getSamplerArg() (float64, error) {

@@ -12,5 +12,5 @@ var (
 	HTTPMiddleware = otelhttp.NewHandler
 )
 
-// HttpTransport is alias for otelhttp.NewTransport.
-var HttpTransport = otelhttp.NewTransport
+// HTTPTransport is alias for otelhttp.NewTransport.
+var HTTPTransport = otelhttp.NewTransport

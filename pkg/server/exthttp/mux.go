@@ -18,7 +18,7 @@ import (
 // 一般用来挂载 prometheus 和 pprof.
 // MuxServer is a simple http mux server.
 type MuxServer struct {
-	*HttpServer
+	*HTTPServer
 	mux *http.ServeMux
 }
 
@@ -26,7 +26,7 @@ type MuxServer struct {
 func NewMuxServer(logger *log.Logger, opts ...OptionFunc) *MuxServer {
 	mux := http.NewServeMux()
 	return &MuxServer{
-		HttpServer: NewHttpServer(mux, logger, opts...),
+		HTTPServer: NewHTTPServer(mux, logger, opts...),
 		mux:        mux,
 	}
 }

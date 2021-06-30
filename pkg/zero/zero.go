@@ -25,11 +25,5 @@ func SetupMetrics() {
 // 处理外部依赖, go-zero 部分需要先初始化.
 func setupZero() {
 	stat.SetReporter(nil)
-	//logx.MustSetup(logx.LogConf{
-	//	ServiceName:         "default",
-	//	Mode:                "console",
-	//	Level:               "info",
-	//	StackCooldownMillis: 100,
-	//})
 	logx.Disable()
 }

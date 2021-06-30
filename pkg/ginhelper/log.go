@@ -13,7 +13,7 @@ import (
 func LoggerMw(logger *log.Logger) gin.HandlerFunc {
 	sl := logger.Sugar()
 	return func(c *gin.Context) {
-		// other handler can change c.Path so:
+		// other handler can change c.Path so:.
 		path := c.Request.URL.Path
 		start := time.Now()
 		c.Next()

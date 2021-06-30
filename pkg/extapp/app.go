@@ -41,13 +41,13 @@ type App struct {
 	// statusProber report healthy status and readiness status to inner http routes
 	// and metrics, and you can add your prober.
 	statusProber     prober.Probe // grpc or http.
-	innerHttpOptions *innerHttpOptions
-	innerHttpFactory innerHttpFactory
-	innerHttpServer  *exthttp.MuxServer
+	innerHTTPOptions *innerHTTPOptions
+	innerHTTPFactory innerHTTPFactory
+	innerHTTPServer  *exthttp.MuxServer
 
-	// user http server
-	httpServer *exthttp.HttpServer
-	// user grpc server
+	// user http server.
+	httpServer *exthttp.HTTPServer
+	// user grpc server.
 	grpcServer *extgrpc.Server
 }
 
@@ -59,7 +59,7 @@ func NewApp() *App {
 
 	return &App{
 		G:                &run.Group{},
-		innerHttpOptions: &innerHttpOptions{},
+		innerHTTPOptions: &innerHTTPOptions{},
 		httpProber:       prober.NewHTTP(),
 		loggerOption:     &log.Option{},
 		Logger:           logger,
@@ -70,24 +70,24 @@ func NewApp() *App {
 // should always be called at first of cobra.Command.Run.
 func (a *App) InitFromCmd(cmd *cobra.Command, name string) {
 	a.App = name
-	// 初始化日志
+	// 初始化日志.
 	logger, err := a.loggerOption.CreateLogger()
 	FatalOnErrorf(err, "init logger")
 	a.Logger = logger
 	log.SyncOnClose(a.G, logger)
 
-	// 初始化 metrics
+	// 初始化 metrics.
 	me := metrics.InitMetrics()
 	a.registry = me
 	a.Reg = prometheus.WrapRegistererWith(prometheus.Labels{"app": name}, me)
 
-	// 初始化 tracer
+	// 初始化 tracer.
 	err = oteltracing.InitTracerFromEnv(a.Logger, a.App)
 	FatalOnError(err)
 
 	a.statusProber = prober.Combine(a.httpProber, prober.NewInstrumentation(a.App, logger, a.registry))
 
-	a.innerHttpServer = a.innerHttpFactory()
+	a.innerHTTPServer = a.innerHTTPFactory()
 }
 
 // AddProber can combine your prober.
@@ -95,10 +95,10 @@ func (a *App) AddProber(p prober.Probe) {
 	a.statusProber = prober.Combine(a.statusProber, p)
 }
 
-// GetInnerHttpServer get inner metrice pprof health http server
+// GetInnerHTTPServer get inner metrice pprof health http server
 // should call after InitFromCmd.
-func (a *App) GetInnerHttpServer() *exthttp.MuxServer {
-	return a.innerHttpServer
+func (a *App) GetInnerHTTPServer() *exthttp.MuxServer {
+	return a.innerHTTPServer
 }
 
 // GinServer create a gin server with many components controlled by commandline options.
@@ -106,12 +106,12 @@ func (a *App) GinServer(opts ...exthttp.OptionFunc) *gin.Engine {
 	r := gin.Default()
 	r.Use(metrics.NewInstrumentationMiddleware(a.Reg))
 	r.Use(oteltracing.GinMiddleware(a.App))
-	// shedder 中间件
+	// shedder 中间件.
 	shedder.RegisterGinShedder(r, a.shedderFactory(), a.Logger)
-	// breaker 中间件
+	// breaker 中间件.
 	breaker.RegisterGinBreaker(r, a.Logger, a.breakerOptionFactory())
 
-	a.httpServer = exthttp.NewHttpServer(r, a.Logger, opts...)
+	a.httpServer = exthttp.NewHTTPServer(r, a.Logger, opts...)
 
 	return r
 }
@@ -139,20 +139,20 @@ func (a *App) GrpcServer(opts ...extgrpc.Option) *extgrpc.Server {
 
 // Start start our application.
 func (a *App) Start() error {
-	// handle exit
+	// handle exit.
 	extrun.HandleSignal(a.G)
 
-	// 1. start common
-	if !a.innerHttpOptions.disable {
-		a.innerHttpServer.Run(a.G, a.statusProber)
+	// 1. start common.
+	if !a.innerHTTPOptions.disable {
+		a.innerHTTPServer.Run(a.G, a.statusProber)
 	}
 
-	// check if has http server
+	// check if has http server.
 	if a.httpServer != nil {
 		a.httpServer.Run(a.G, a.statusProber)
 	}
 
-	// check if has grpc server
+	// check if has grpc server.
 	if a.grpcServer != nil {
 		a.grpcServer.Run(a.G, a.statusProber)
 	}
@@ -163,17 +163,17 @@ func (a *App) Start() error {
 // Run register all the commandline flags
 // should be called in main function.
 func (a *App) Run(cmd *cobra.Command) {
-	// 注册日志相关 flag
+	// 注册日志相关 flag.
 	a.loggerOption.Register(cmd)
 
-	// 注册 shedder flag
+	// 注册 shedder flag.
 	a.shedderFactory = shedder.Register(cmd)
 
-	// 注册 breaker flag
+	// 注册 breaker flag.
 	a.breakerOptionFactory = breaker.Register(cmd)
 
-	// 注册 inner app server
-	a.innerHttpFactory = registerInnerHttp(a, cmd)
+	// 注册 inner app server.
+	a.innerHTTPFactory = registerInnerHTTP(a, cmd)
 
 	FatalOnError(cmd.Execute())
 }

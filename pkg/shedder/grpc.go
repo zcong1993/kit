@@ -19,7 +19,7 @@ import (
 // WithGrpcShedder create shedder option based on command line parameters.
 func WithGrpcShedder(logger *log.Logger, shedder load.Shedder) extgrpc.Option {
 	logger = logger.With(log.Component("grpc/shedder"))
-	// noop middleware
+	// noop middleware.
 	if shedder == nil {
 		logger.Info("disable middleware")
 		return extgrpc.NoopOption()

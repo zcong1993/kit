@@ -72,7 +72,9 @@ func NewLogger(o *Option, opts ...zap.Option) (*Logger, error) {
 
 	config.Encoding = o.LogEncoding
 
-	return config.Build(opts...)
+	l, err := config.Build(opts...)
+
+	return l, errors.Wrap(err, "build zap")
 }
 
 // Register register flags to cobra global flag set.
@@ -100,7 +102,7 @@ func SyncOnClose(g *run.Group, logger *Logger) {
 	ctx, cancel := context.WithCancel(context.Background())
 	g.Add(func() error {
 		<-ctx.Done()
-		return ctx.Err()
+		return nil
 	}, func(err error) {
 		_ = logger.Sync()
 		logger.Debug("sync logger before close")

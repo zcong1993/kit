@@ -40,7 +40,7 @@ func WithGrpcServerBreaker(logger *log.Logger, opt *Option) extgrpc.Option {
 func unaryServerInterceptor(logger *log.Logger, metrics *stat.Metrics, brkGetter *BrkGetter) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (interface{}, error) {
 		brk := brkGetter.Get(info.FullMethod)
-		// breaker logic
+		// breaker logic.
 		promise, err := brk.Allow()
 		if err != nil {
 			metrics.AddDrop()
@@ -64,7 +64,7 @@ func unaryServerInterceptor(logger *log.Logger, metrics *stat.Metrics, brkGetter
 func streamServerInterceptor(logger *log.Logger, metrics *stat.Metrics, brkGetter *BrkGetter) grpc.StreamServerInterceptor {
 	return func(srv interface{}, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 		brk := brkGetter.Get(info.FullMethod)
-		// breaker logic
+		// breaker logic.
 		promise, err := brk.Allow()
 		if err != nil {
 			metrics.AddDrop()

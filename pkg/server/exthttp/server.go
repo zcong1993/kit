@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/zcong1993/kit/pkg/log"
 	"go.uber.org/zap"
 
@@ -12,8 +14,8 @@ import (
 	"github.com/zcong1993/kit/pkg/prober"
 )
 
-// HttpServer is our exthttp server.
-type HttpServer struct {
+// HTTPServer is our exthttp server.
+type HTTPServer struct {
 	handler http.Handler
 	srv     *http.Server
 	logger  *log.Logger
@@ -51,33 +53,33 @@ func WithServiceName(name string) OptionFunc {
 	}
 }
 
-// NewHttpServer create a new HttpServer instance.
-func NewHttpServer(handler http.Handler, logger *log.Logger, opts ...OptionFunc) *HttpServer {
+// NewHTTPServer create a new HTTPServer instance.
+func NewHTTPServer(handler http.Handler, logger *log.Logger, opts ...OptionFunc) *HTTPServer {
 	option := &Option{
 		service: "http/server",
 	}
 	for _, f := range opts {
 		f(option)
 	}
-	return &HttpServer{handler: handler, logger: logger.With(log.Service(option.service)), option: option}
+	return &HTTPServer{handler: handler, logger: logger.With(log.Service(option.service)), option: option}
 }
 
 // Start listen and serve http server.
-func (hs *HttpServer) Start() error {
+func (hs *HTTPServer) Start() error {
 	srv := &http.Server{
 		Addr:    hs.option.listen,
 		Handler: hs.handler,
 	}
 	hs.srv = srv
 	hs.logger.Sugar().Infow("listening for requests", "address", hs.option.listen)
-	return srv.ListenAndServe()
+	return errors.Wrap(srv.ListenAndServe(), "listen and serve")
 }
 
 // Shutdown shutdown the http server
 // if gracePeriod set, it will shutdown gracefully.
-func (hs *HttpServer) Shutdown(err error) {
+func (hs *HTTPServer) Shutdown(err error) {
 	hs.logger.Info("internal server is shutting down", log.ErrorMsg(err))
-	if err == http.ErrServerClosed {
+	if errors.Is(err, http.ErrServerClosed) {
 		hs.logger.Warn("internal server closed unexpectedly")
 		return
 	}
@@ -100,7 +102,7 @@ func (hs *HttpServer) Shutdown(err error) {
 }
 
 // Run start http server with run group.
-func (hs *HttpServer) Run(g *run.Group, statusProber prober.Probe) {
+func (hs *HTTPServer) Run(g *run.Group, statusProber prober.Probe) {
 	g.Add(func() error {
 		statusProber.Healthy()
 		return hs.Start()

@@ -36,7 +36,7 @@ func main() {
 			addRouters(ginServer)
 
 			// 启动内部 http 服务, 健康检查路由, 监控指标路由, pprof
-			m := app.GetInnerHttpServer()
+			m := app.GetInnerHTTPServer()
 			// 可以在增加额外路由
 			m.HandleFunc("/xxx", func(writer http.ResponseWriter, request *http.Request) {
 				writer.Write([]byte("ok"))

@@ -66,7 +66,6 @@ func (p *HTTPProbe) Ready() {
 // NotReady sets components status to not ready with given error as a cause.
 func (p *HTTPProbe) NotReady(err error) {
 	p.ready.Swap(0)
-
 }
 
 // Healthy sets components status to healthy.

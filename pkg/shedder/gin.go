@@ -23,7 +23,7 @@ func RegisterGinShedder(r *gin.Engine, shedder load.Shedder, logger *log.Logger)
 
 // GinShedderMiddleware create a gin middleware.
 func GinShedderMiddleware(shedder load.Shedder, logger *log.Logger) gin.HandlerFunc {
-	// noop middleware
+	// noop middleware.
 	if shedder == nil {
 		logger.Error("shedder is nil")
 		return func(c *gin.Context) {

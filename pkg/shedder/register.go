@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	shedderCpuThreshold = "shedder.cpu-threshold"
+	shedderCPUThreshold = "shedder.cpu-threshold"
 	helpText            = "CpuThreshold config for adaptive shedder, set 0 to disable"
 )
 
@@ -17,7 +17,7 @@ type Factory = func() load.Shedder
 func Register(app *cobra.Command) Factory {
 	var cpuThreshold int64
 
-	app.PersistentFlags().Int64Var(&cpuThreshold, shedderCpuThreshold, 900, helpText)
+	app.PersistentFlags().Int64Var(&cpuThreshold, shedderCPUThreshold, 900, helpText)
 
 	return func() load.Shedder {
 		return NewShedder(cpuThreshold)

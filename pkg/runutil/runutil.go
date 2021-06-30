@@ -103,8 +103,8 @@ func RetryWithLog(logger *log.Logger, interval time.Duration, stopC <-chan struc
 	}
 }
 
-// CloseWithLogOnErr is making sure we log every error, even those from best effort tiny closers.
-func CloseWithLogOnErr(logger *log.Logger, closer io.Closer, format string, a ...interface{}) {
+// CloseWithLogOnErrf is making sure we log every error, even those from best effort tiny closers.
+func CloseWithLogOnErrf(logger *log.Logger, closer io.Closer, format string, a ...interface{}) {
 	err := closer.Close()
 	if err == nil {
 		return
