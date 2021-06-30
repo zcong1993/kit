@@ -8,6 +8,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// Recover handle and log panic.
 func Recover(logger *log.Logger, cleanups ...func()) {
 	for _, cleanup := range cleanups {
 		cleanup()
@@ -18,11 +19,13 @@ func Recover(logger *log.Logger, cleanups ...func()) {
 	}
 }
 
+// WithRecover run function with Recover handler.
 func WithRecover(fn func(), logger *log.Logger) {
 	defer Recover(logger)
 	fn()
 }
 
+// GoSafe run function in goroutine with Recover handler.
 func GoSafe(fn func(), logger *log.Logger) {
 	go WithRecover(fn, logger)
 }
