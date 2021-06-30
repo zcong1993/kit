@@ -1,5 +1,7 @@
 # go-kit
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/zcong1993/kit.svg)](https://pkg.go.dev/github.com/zcong1993/kit) [![Go Report Card](https://goreportcard.com/badge/github.com/zcong1993/kit)](https://goreportcard.com/report/github.com/zcong1993/kit)
+
 > go kit for microservice
 
 ## Features
