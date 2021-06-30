@@ -9,13 +9,13 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 
-	"github.com/zcong1993/x/pkg/extapp"
+	"github.com/zcong1993/kit/pkg/extapp"
 
-	"github.com/zcong1993/x/pkg/server/exthttp"
+	"github.com/zcong1993/kit/pkg/server/exthttp"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
-	"github.com/zcong1993/x/pkg/ginhelper"
+	"github.com/zcong1993/kit/pkg/ginhelper"
 )
 
 type Input struct {

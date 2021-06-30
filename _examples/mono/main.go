@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/zcong1993/x/pkg/extapp"
+	"github.com/zcong1993/kit/pkg/extapp"
 )
 
 var (

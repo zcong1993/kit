@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/zcong1993/x/pkg/log"
+	"github.com/zcong1993/kit/pkg/log"
 	"go.uber.org/zap"
 
 	"github.com/oklog/run"
-	"github.com/zcong1993/x/pkg/prober"
+	"github.com/zcong1993/kit/pkg/prober"
 )
 
 type HttpServer struct {

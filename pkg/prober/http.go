@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/zcong1993/x/pkg/log"
+	"github.com/zcong1993/kit/pkg/log"
 	"go.uber.org/atomic"
 )
 

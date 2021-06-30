@@ -3,8 +3,8 @@ package runutil_test
 import (
 	"testing"
 
-	"github.com/zcong1993/x/pkg/log"
-	"github.com/zcong1993/x/pkg/runutil"
+	"github.com/zcong1993/kit/pkg/log"
+	"github.com/zcong1993/kit/pkg/runutil"
 )
 
 func TestWithRecover(t *testing.T) {

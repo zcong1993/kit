@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/zcong1993/x/pkg/server/exthttp"
+	"github.com/zcong1993/kit/pkg/server/exthttp"
 )
 
 // 内部 http 服务, 一般用来暴露存活, 健康检查路由

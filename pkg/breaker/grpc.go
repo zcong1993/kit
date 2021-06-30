@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/zcong1993/x/pkg/log"
+	"github.com/zcong1993/kit/pkg/log"
 	"go.uber.org/zap"
 
-	"github.com/zcong1993/x/pkg/server/extgrpc"
-	"github.com/zcong1993/x/pkg/zero"
+	"github.com/zcong1993/kit/pkg/server/extgrpc"
+	"github.com/zcong1993/kit/pkg/zero"
 
 	"github.com/tal-tech/go-zero/core/stat"
 	"google.golang.org/grpc"

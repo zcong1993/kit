@@ -4,14 +4,14 @@ import (
 	"log"
 	"time"
 
-	"github.com/zcong1993/x/pkg/extapp"
+	"github.com/zcong1993/kit/pkg/extapp"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
-	"github.com/zcong1993/x/_examples/grpc/pb"
-	"github.com/zcong1993/x/pkg/extgrpcc"
-	"github.com/zcong1993/x/pkg/ginhelper"
-	"github.com/zcong1993/x/pkg/server/exthttp"
+	"github.com/zcong1993/kit/_examples/grpc/pb"
+	"github.com/zcong1993/kit/pkg/extgrpcc"
+	"github.com/zcong1993/kit/pkg/ginhelper"
+	"github.com/zcong1993/kit/pkg/server/exthttp"
 	"google.golang.org/grpc"
 )
 

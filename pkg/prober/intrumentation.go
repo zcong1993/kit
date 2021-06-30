@@ -5,7 +5,7 @@ package prober
 
 import (
 	"github.com/prometheus/client_golang/prometheus"
-	"github.com/zcong1993/x/pkg/log"
+	"github.com/zcong1993/kit/pkg/log"
 	"go.uber.org/zap"
 )
 

@@ -4,7 +4,7 @@ import (
 	"math"
 	"sync"
 
-	oteltracing "github.com/zcong1993/x/pkg/tracing/otel"
+	oteltracing "github.com/zcong1993/kit/pkg/tracing/otel"
 
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/prometheus/client_golang/prometheus"

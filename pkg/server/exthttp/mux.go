@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"net/http/pprof"
 
-	"github.com/zcong1993/x/pkg/log"
+	"github.com/zcong1993/kit/pkg/log"
 
-	"github.com/zcong1993/x/pkg/prober"
+	"github.com/zcong1993/kit/pkg/prober"
 
 	"github.com/felixge/fgprof"
 	"github.com/oklog/run"

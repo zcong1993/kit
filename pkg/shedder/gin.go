@@ -3,11 +3,11 @@ package shedder
 import (
 	"net/http"
 
-	"github.com/zcong1993/x/pkg/log"
+	"github.com/zcong1993/kit/pkg/log"
 
 	"github.com/gin-gonic/gin"
 	"github.com/tal-tech/go-zero/core/load"
-	"github.com/zcong1993/x/pkg/zero"
+	"github.com/zcong1993/kit/pkg/zero"
 )
 
 func RegisterGinShedder(r *gin.Engine, shedder load.Shedder, logger *log.Logger) {

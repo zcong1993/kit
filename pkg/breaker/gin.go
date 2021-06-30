@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/zcong1993/x/pkg/log"
+	"github.com/zcong1993/kit/pkg/log"
 
 	"github.com/gin-gonic/gin"
-	"github.com/zcong1993/x/pkg/zero"
+	"github.com/zcong1993/kit/pkg/zero"
 )
 
 const breakerSeparator = "://"

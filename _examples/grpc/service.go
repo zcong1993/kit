@@ -6,19 +6,19 @@ import (
 	"io"
 	"time"
 
-	"github.com/zcong1993/x/pkg/log"
+	"github.com/zcong1993/kit/pkg/log"
 
-	oteltracing "github.com/zcong1993/x/pkg/tracing/otel"
+	oteltracing "github.com/zcong1993/kit/pkg/tracing/otel"
 
-	"github.com/zcong1993/x/pkg/server/extgrpc"
+	"github.com/zcong1993/kit/pkg/server/extgrpc"
 	"google.golang.org/grpc"
 
 	"google.golang.org/grpc/metadata"
 
-	"github.com/zcong1993/x/pkg/extapp"
+	"github.com/zcong1993/kit/pkg/extapp"
 
 	"github.com/spf13/cobra"
-	"github.com/zcong1993/x/_examples/grpc/pb"
+	"github.com/zcong1993/kit/_examples/grpc/pb"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )

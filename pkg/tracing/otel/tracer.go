@@ -5,7 +5,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/zcong1993/x/pkg/log"
+	"github.com/zcong1993/kit/pkg/log"
 
 	"github.com/pkg/errors"
 	"go.opentelemetry.io/otel"

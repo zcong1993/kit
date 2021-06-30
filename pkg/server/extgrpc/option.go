@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"time"
 
-	oteltracing "github.com/zcong1993/x/pkg/tracing/otel"
+	oteltracing "github.com/zcong1993/kit/pkg/tracing/otel"
 
 	"google.golang.org/grpc"
 )

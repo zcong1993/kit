@@ -1,4 +1,4 @@
-module github.com/zcong1993/x
+module github.com/zcong1993/kit
 
 go 1.16
 

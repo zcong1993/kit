@@ -5,13 +5,13 @@ import (
 	"net/http"
 	"time"
 
-	oteltracing "github.com/zcong1993/x/pkg/tracing/otel"
+	oteltracing "github.com/zcong1993/kit/pkg/tracing/otel"
 
-	"github.com/zcong1993/x/pkg/extapp"
+	"github.com/zcong1993/kit/pkg/extapp"
 
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/cobra"
-	"github.com/zcong1993/x/pkg/server/exthttp"
+	"github.com/zcong1993/kit/pkg/server/exthttp"
 )
 
 func service1Cmd(app *extapp.App) *cobra.Command {

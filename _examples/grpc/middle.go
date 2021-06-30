@@ -6,13 +6,13 @@ import (
 	"log"
 	"time"
 
-	"github.com/zcong1993/x/pkg/extgrpcc"
+	"github.com/zcong1993/kit/pkg/extgrpcc"
 
-	"github.com/zcong1993/x/pkg/extapp"
+	"github.com/zcong1993/kit/pkg/extapp"
 
 	"github.com/spf13/cobra"
-	"github.com/zcong1993/x/_examples/grpc/pb"
-	"github.com/zcong1993/x/pkg/server/extgrpc"
+	"github.com/zcong1993/kit/_examples/grpc/pb"
+	"github.com/zcong1993/kit/pkg/server/extgrpc"
 	"google.golang.org/grpc"
 )
 
