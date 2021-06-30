@@ -10,7 +10,7 @@ import (
 
 var once sync.Once
 
-// 不要使用默认 register, 太容易产生冲突.
+// InitMetrics 不要使用默认 register, 太容易产生冲突.
 func InitMetrics() *prometheus.Registry {
 	me := prometheus.NewRegistry()
 

@@ -3,7 +3,7 @@
 
 package prober
 
-// Prober represents health and readiness status of given component.
+// Probe Prober represents health and readiness status of given component.
 //
 // From Kubernetes documentation https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-probes/ :
 //
@@ -22,4 +22,23 @@ type Probe interface {
 	NotHealthy(err error)
 	Ready()
 	NotReady(err error)
+}
+
+type NopProber struct {
+}
+
+func (np *NopProber) Healthy() {
+
+}
+
+func (np *NopProber) NotHealthy(err error) {
+
+}
+
+func (np *NopProber) Ready() {
+
+}
+
+func (np *NopProber) NotReady(err error) {
+
 }

@@ -50,7 +50,7 @@ func registerInnerHttp(app *App, cmd *cobra.Command) innerHttpFactory {
 
 		if app.innerHttpOptions.withMetrics {
 			app.Logger.Info("register metrics route, /metrics")
-			profileServer.RegisterMetrics(app.Registry)
+			profileServer.RegisterMetrics(app.registry)
 		}
 
 		if app.innerHttpOptions.withLogControl {
@@ -58,7 +58,7 @@ func registerInnerHttp(app *App, cmd *cobra.Command) innerHttpFactory {
 			profileServer.RegisterLogControl(app.loggerOption.GetLevel())
 		}
 
-		profileServer.RegisterProber(app.HttpProber)
+		profileServer.RegisterProber(app.httpProber)
 
 		return profileServer
 	}
