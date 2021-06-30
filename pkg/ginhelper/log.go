@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// LoggerMw create a gin request log middleware.
 func LoggerMw(logger *log.Logger) gin.HandlerFunc {
 	sl := logger.Sugar()
 	return func(c *gin.Context) {
@@ -33,6 +34,7 @@ func LoggerMw(logger *log.Logger) gin.HandlerFunc {
 	}
 }
 
+// DefaultWithLogger create a gin engine with log middleware.
 func DefaultWithLogger(logger *log.Logger) *gin.Engine {
 	g := gin.New()
 	g.Use(LoggerMw(logger.With(log.Component("requestLog"))), gin.Recovery())

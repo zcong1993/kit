@@ -9,6 +9,7 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
+// BizError is our custom error type.
 type BizError struct {
 	Status  int    `json:"-"`
 	Code    int    `json:"code"`
@@ -16,6 +17,7 @@ type BizError struct {
 	Err     error  `json:"-"`
 }
 
+// NewBizError create new BizError.
 func NewBizError(status, code int, message string) *BizError {
 	return &BizError{
 		Status:  status,
@@ -25,6 +27,7 @@ func NewBizError(status, code int, message string) *BizError {
 	}
 }
 
+// NewFromError can create BizError from error.
 func NewFromError(status, code int, err error) *BizError {
 	if err == nil {
 		return nil
@@ -37,6 +40,7 @@ func NewFromError(status, code int, err error) *BizError {
 	}
 }
 
+// Error impl golang error.Error.
 func (e *BizError) Error() string {
 	if e.Message != "" {
 		return e.Message
@@ -44,10 +48,15 @@ func (e *BizError) Error() string {
 	return http.StatusText(e.Status)
 }
 
+// Unwrap get the inner error.
 func (e *BizError) Unwrap() error {
 	return e.Err
 }
 
+// ReplyError handle multi error
+// 1. BizError, return status: BizError.Status and BizError as json body
+// 2. ValidationErrors, return status: 400, and json error body
+// 3. other, return status 500 and json error body.
 func ReplyError(ctx *gin.Context, err error) {
 	// 业务错误
 	var bizError *BizError
