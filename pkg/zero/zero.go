@@ -8,11 +8,13 @@ import (
 )
 
 var (
+	// Metrics is global go-zero metrics.
 	Metrics *stat.Metrics
 	once    sync.Once
 )
 
 // SetupMetrics 创建一个全局 metrics.
+// SetupMetrics create a global metrics.
 func SetupMetrics() {
 	once.Do(func() {
 		setupZero()
