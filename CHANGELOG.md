@@ -2,9 +2,16 @@
 ## [Unreleased]
 
 
+<a name="v0.2.3"></a>
+## [v0.2.3] - 2021-07-01
+### Ci
+- [b84a2ea](https://github.com/zcong1993/kit/commit/b84a2eaef5840cf28d3a84043b70c44477d6be5c) add missing config
+
+
 <a name="v0.2.2"></a>
 ## [v0.2.2] - 2021-07-01
 ### Chore
+- [37e7c97](https://github.com/zcong1993/kit/commit/37e7c977d8383cf12c84cbf972fa65ade332bd6a) update changelog for v0.2.2
 - [0ead3d2](https://github.com/zcong1993/kit/commit/0ead3d226d7762f08c4a3d8452da32c8093d5fbe) **changelog:** add release ci and add commit hash in changelog
 
 
@@ -136,7 +143,8 @@
 - [99311bc](https://github.com/zcong1993/kit/commit/99311bc8fa1f6819353c89f19e4c33ef8d7d126e) **log:** use cobra
 
 
-[Unreleased]: https://github.com/zcong1993/kit/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/zcong1993/kit/compare/v0.2.3...HEAD
+[v0.2.3]: https://github.com/zcong1993/kit/compare/v0.2.2...v0.2.3
 [v0.2.2]: https://github.com/zcong1993/kit/compare/v0.2.1...v0.2.2
 [v0.2.1]: https://github.com/zcong1993/kit/compare/v0.2.0...v0.2.1
 [v0.2.0]: https://github.com/zcong1993/kit/compare/v0.1.0...v0.2.0
