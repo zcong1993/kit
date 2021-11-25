@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
 	"time"
+
+	"github.com/zcong1993/kit/pkg/extrun"
 
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
@@ -41,6 +44,20 @@ func main() {
 			m.HandleFunc("/xxx", func(writer http.ResponseWriter, request *http.Request) {
 				writer.Write([]byte("ok"))
 			})
+
+			extrun.RunUntilExit(app.G, app.Logger, func(ctx context.Context) error {
+				t := time.NewTicker(time.Second * 2)
+				defer t.Stop()
+
+				for {
+					select {
+					case <-ctx.Done():
+						return nil
+					case <-t.C:
+						app.Logger.Info("new ticker")
+					}
+				}
+			}, "ticker worker")
 
 			extapp.FatalOnErrorf(app.Start(), "start error")
 		},
