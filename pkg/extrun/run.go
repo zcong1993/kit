@@ -21,7 +21,7 @@ func HandleSignal(g *run.Group, signals ...os.Signal) {
 }
 
 // RunUntilExit is helper function for long term tasks
-// if run group is invoked, the wrapper fn should receive <- ctx.Done()
+// if run group is invoked, the wrapper fn should receive <- ctx.Done().
 func RunUntilExit(g *run.Group, logger *log.Logger, fn func(ctx context.Context) error, componentName string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	g.Add(func() error {
