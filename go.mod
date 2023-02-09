@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/felixge/fgprof v0.9.1
-	github.com/gin-gonic/gin v1.7.2
+	github.com/gin-gonic/gin v1.7.7
 	github.com/go-playground/validator/v10 v10.6.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
