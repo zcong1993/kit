@@ -5,7 +5,7 @@ go 1.16
 replace github.com/zcong1993/kit => ../
 
 require (
-	github.com/gin-gonic/gin v1.7.2
+	github.com/gin-gonic/gin v1.7.7
 	github.com/golang/protobuf v1.5.2
 	github.com/spf13/cobra v1.1.3
 	github.com/zcong1993/kit v0.0.0-00010101000000-000000000000
